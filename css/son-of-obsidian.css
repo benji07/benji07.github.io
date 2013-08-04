@@ -1,0 +1,92 @@
+/*
+ * Derived from einaros's Sons of Obsidian theme at
+ * http://studiostyl.es/schemes/son-of-obsidian by
+ * Alex Ford of CodeTunnel:
+ * http://CodeTunnel.com/blog/post/71/google-code-prettify-obsidian-theme
+ */
+/* line 8, ../_sass/son-of-obsidian.scss */
+.str {
+  color: #EC7600;
+}
+
+/* line 12, ../_sass/son-of-obsidian.scss */
+.kwd {
+  color: #93C763;
+}
+
+/* line 16, ../_sass/son-of-obsidian.scss */
+.com {
+  color: #66747B;
+}
+
+/* line 20, ../_sass/son-of-obsidian.scss */
+.typ {
+  color: #678CB1;
+}
+
+/* line 24, ../_sass/son-of-obsidian.scss */
+.lit {
+  color: #FACD22;
+}
+
+/* line 28, ../_sass/son-of-obsidian.scss */
+.pun {
+  color: #F1F2F3;
+}
+
+/* line 32, ../_sass/son-of-obsidian.scss */
+.pln {
+  color: #F1F2F3;
+}
+
+/* line 36, ../_sass/son-of-obsidian.scss */
+.tag {
+  color: #8AC763;
+}
+
+/* line 40, ../_sass/son-of-obsidian.scss */
+.atn {
+  color: #E0E2E4;
+}
+
+/* line 44, ../_sass/son-of-obsidian.scss */
+.atv {
+  color: #EC7600;
+}
+
+/* line 48, ../_sass/son-of-obsidian.scss */
+.dec {
+  color: purple;
+}
+
+/* line 52, ../_sass/son-of-obsidian.scss */
+pre.prettyprint {
+  padding: 0.7em;
+  font-size: 0.9em;
+  font-family: monaco, serif;
+  margin-bottom: 1em;
+  line-height: 1.2em;
+  white-space: pre;
+  overflow: auto;
+}
+
+/* line 62, ../_sass/son-of-obsidian.scss */
+ol.linenums {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* line 67, ../_sass/son-of-obsidian.scss */
+.prettyprint {
+  background: #222 !important;
+}
+
+/* line 71, ../_sass/son-of-obsidian.scss */
+li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9 {
+  color: #555;
+}
+
+/* line 75, ../_sass/son-of-obsidian.scss */
+li.L1, li.L3, li.L5, li.L7, li.L9 {
+  background: #111;
+}

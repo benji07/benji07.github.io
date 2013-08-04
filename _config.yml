@@ -1,0 +1,19 @@
+safe:       true
+permalink:  none
+pygments:   true
+markdown:   redcarpet
+redcarpet:
+    extensions: [ "tables", "no_intra_emphasis" ]
+
+site:
+    name:  "Benjamin Lévêque"
+    author: Benjamin Lévêque
+    email:  benjamin@leveque.me
+    url:    http://benjamin.leveque.me
+
+my_linkedin: http://fr.linkedin.com/pub/benjamin-l%C3%A9v%C3%AAque/38/7a6/1a8/
+my_github:   http://www.github.com/benji07
+my_twitter:  http://www.twitter.com/benji__07
+
+
+exclude: [config.rb, .sass-cache]
