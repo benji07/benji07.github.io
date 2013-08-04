@@ -4,89 +4,114 @@
  * Alex Ford of CodeTunnel:
  * http://CodeTunnel.com/blog/post/71/google-code-prettify-obsidian-theme
  */
-/* line 8, ../_sass/son-of-obsidian.scss */
-.str {
-  color: #EC7600;
-}
 
-/* line 12, ../_sass/son-of-obsidian.scss */
-.kwd {
-  color: #93C763;
+.str
+{
+    color: #EC7600;
 }
-
-/* line 16, ../_sass/son-of-obsidian.scss */
-.com {
-  color: #66747B;
+.kwd
+{
+    color: #93C763;
 }
-
-/* line 20, ../_sass/son-of-obsidian.scss */
-.typ {
-  color: #678CB1;
+.com
+{
+    color: #66747B;
 }
-
-/* line 24, ../_sass/son-of-obsidian.scss */
-.lit {
-  color: #FACD22;
+.typ
+{
+    color: #678CB1;
 }
-
-/* line 28, ../_sass/son-of-obsidian.scss */
-.pun {
-  color: #F1F2F3;
+.lit
+{
+    color: #FACD22;
 }
-
-/* line 32, ../_sass/son-of-obsidian.scss */
-.pln {
-  color: #F1F2F3;
+.pun
+{
+    color: #F1F2F3;
 }
-
-/* line 36, ../_sass/son-of-obsidian.scss */
-.tag {
-  color: #8AC763;
+.pln
+{
+    color: #F1F2F3;
 }
-
-/* line 40, ../_sass/son-of-obsidian.scss */
-.atn {
-  color: #E0E2E4;
+.tag
+{
+    color: #8AC763;
 }
-
-/* line 44, ../_sass/son-of-obsidian.scss */
-.atv {
-  color: #EC7600;
+.atn
+{
+    color: #E0E2E4;
 }
-
-/* line 48, ../_sass/son-of-obsidian.scss */
-.dec {
-  color: purple;
+.atv
+{
+    color: #EC7600;
 }
-
-/* line 52, ../_sass/son-of-obsidian.scss */
-pre.prettyprint {
-  padding: 0.7em;
-  font-size: 0.9em;
-  font-family: monaco, serif;
-  margin-bottom: 1em;
-  line-height: 1.2em;
-  white-space: pre;
-  overflow: auto;
+.dec
+{
+    color: purple;
 }
-
-/* line 62, ../_sass/son-of-obsidian.scss */
-ol.linenums {
-  margin-top: 0;
-  margin-bottom: 0;
+pre.prettyprint
+{
+    border: 0px solid #888;
 }
-
-/* line 67, ../_sass/son-of-obsidian.scss */
+ol.linenums
+{
+    margin-top: 0;
+    margin-bottom: 0;
+}
 .prettyprint {
-  background: #222 !important;
+    background: #000 !important;
 }
-
-/* line 71, ../_sass/son-of-obsidian.scss */
-li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9 {
-  color: #555;
+li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9
+{
+    color: #555;
 }
-
-/* line 75, ../_sass/son-of-obsidian.scss */
 li.L1, li.L3, li.L5, li.L7, li.L9 {
-  background: #111;
+    background: #111;
+}
+@media print
+{
+    .str
+    {
+        color: #060;
+    }
+    .kwd
+    {
+        color: #006;
+        font-weight: bold;
+    }
+    .com
+    {
+        color: #600;
+        font-style: italic;
+    }
+    .typ
+    {
+        color: #404;
+        font-weight: bold;
+    }
+    .lit
+    {
+        color: #044;
+    }
+    .pun
+    {
+        color: #440;
+    }
+    .pln
+    {
+        color: #000;
+    }
+    .tag
+    {
+        color: #006;
+        font-weight: bold;
+    }
+    .atn
+    {
+        color: #404;
+    }
+    .atv
+    {
+        color: #060;
+    }
 }
