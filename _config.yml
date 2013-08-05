@@ -2,5 +2,12 @@ safe:       true
 permalink:  none
 pygments:   true
 markdown:   redcarpet
-redcarpet:
-    extensions: [ "tables", "no_intra_emphasis" ]
+
+title:  Benjamin Lévêque
+author: Benjamin Lévêque
+email:  benjamin@leveque.me
+url:    http://benjamin.leveque.me
+
+github: https://github.com/benji07
+veille: https://kippt.com/benji07
+twitter: https://twitter.com/benji__07

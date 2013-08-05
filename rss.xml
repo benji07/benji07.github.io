@@ -1,0 +1,23 @@
+---
+layout: nil
+---
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>{{ site.title }}</title>
+        <link>{{ site.url }}</link>
+        <description></description>
+        <pubDate>{{ site.time | date_to_xmlschema }}</pubDate>
+        <managingEditor>{{ site.email }} ({{ site.author }})</managingEditor>
+        <language>fr</language>
+        {% for post in site.posts %}<item>
+            <title><![CDATA[{{ post.title }}]]></title>
+            <link>{{ site.url }}{{ post.url }}</link>
+            <description><![CDATA[{{ post.content }}]]></description>
+            <guid isPermaLink="false">{{post.id}}</guid>
+            <author>{{ site.email }} ({{ site.author }})</author>
+            <pubDate>{{ post.date | date_to_xmlschema }}</pubDate>
+            <comments></comments>
+        </item>{% endfor %}
+    </channel>
+</rss>
