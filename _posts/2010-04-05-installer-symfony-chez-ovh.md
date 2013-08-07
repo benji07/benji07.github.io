@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Installer symfony chez ovh"
+old: 4
 ---
 
 Modifier le fichier htaccess pour utiliser php5 au lieu de php4.

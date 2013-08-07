@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Introduction à Gaufrette"
+old: 63
 ---
 
 Cela fait un moment que j'ai envie d'apprendre à me servir de [Gaufrette][0], Donc je me suis dit que j'allais écrire un article sur cette librairie.
@@ -13,54 +14,59 @@ Gaufrette permet d'ajouter une couche d'abstraction sur son système de fichier,
 
 Pour installer Gaufrette, il suffit d'ajouter les lignes suivantes dans votre fichier composer.json. Dans cet article je ne vais pas utiliser Gaufrette avec Symfony2 (mais il existe un [bundle][2] pour l'intégrer)
 
-    "require": {
-        "knplabs/gaufrette": "*"
-    }
+{% highlight json %}
+"require": {
+    "knplabs/gaufrette": "*"
+}
+{% endhighlight %}
 
 ## Exemple d'utilisation
 
-    [php]
-    <?php
+{% highlight php %}
+<?php
 
-    use Gaufrette\Filesystem;
-    use Gaufrette\Adapter\Local as LocalAdapter;
+use Gaufrette\Filesystem;
+use Gaufrette\Adapter\Local as LocalAdapter;
 
-    class Importer
+class Importer
+{
+    protected $filesystem;
+
+    public function __construct(Filesystem $filesystem)
     {
-        protected $filesystem;
+        $this->filesystem = $filesystem;
+    }
 
-        public function __construct(Filesystem $filesystem)
-        {
-            $this->filesystem = $filesystem;
-        }
+    public function import($filename, $markAsProcess = false)
+    {
+        $content = $this->filesystem->read($filename);
 
-        public function import($filename, $markAsProcess = false)
-        {
-            $content = $this->filesystem->read($filename);
+        // do whatever you want with the file content
 
-            // do whatever you want with the file content
-
-            // mark the file as process
-            if ($markAsProcess) {
-                $this->filesystem->rename($filename, 'process/'.$filename);
-            }
+        // mark the file as process
+        if ($markAsProcess) {
+            $this->filesystem->rename($filename, 'process/'.$filename);
         }
     }
+}
+{% endhighlight %}
 
 Comme vous pouvez le voir dans le code au-dessus, il s'agit d'une classe pour importer des fichiers, cette classe n'a pas besoin de savoir sur quel support se trouve le fichier (par exemple lors de la phase de développement, le fichier peut se trouver en local sur sa machine, mais lors du passage en production, le fichier pourrait être sur un ftp distant).
 
-    [php]
-    // Import a file from local adapter
-    $adapter = new LocalAdapter(__DIR__.'/uploads');
-    $filesystem = new Filesystem($adapter);
-    $importer = new Importer($filesystem);
-    $importer->import('monfichier.csv', true);
+{% highlight php %}
+<?php
+// Import a file from local adapter
+$adapter = new LocalAdapter(__DIR__.'/uploads');
+$filesystem = new Filesystem($adapter);
+$importer = new Importer($filesystem);
+$importer->import('monfichier.csv', true);
 
-    // Import a file from ftp adapter
-    $adapter = new FtpAdapter();
-    $filesystem = new Filesystem($adapter);
-    $importer = new Importer($filesystem);
-    $importer->import('monfichier.csv', true);
+// Import a file from ftp adapter
+$adapter = new FtpAdapter();
+$filesystem = new Filesystem($adapter);
+$importer = new Importer($filesystem);
+$importer->import('monfichier.csv', true);
+{% endhighlight %}
 
 [0]: http://knplabs.fr/blog/give-your-projects-a-gaufrette
 [1]: http://aws.amazon.com/fr/s3/

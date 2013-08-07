@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Gérer ses paquets privés avec Satis"
+old: 70
 ---
 
 ## Qu'est ce que Satis ?
@@ -22,17 +23,19 @@ Satis permet ainsi de répondre à plusieurs problématiques:
 
 Tout ça à partir d'un fichier `composer.json` comme celui-ci :
 
-    {
-        "name": "elao/my-application",
-        "require": {
-            "php": ">=5.3.3",
-            "silex/silex": "1.0.*"
-        },
-        "minimum-stability": "dev",
-        "autoload": {
-            "psr-0": { "": "src/" }
-        }
+{% highlight json %}
+{
+    "name": "elao/my-application",
+    "require": {
+        "php": ">=5.3.3",
+        "silex/silex": "1.0.*"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-0": { "": "src/" }
     }
+}
+{% endhighlight %}
 
 ## Installation
 
@@ -47,17 +50,19 @@ Il y a ensuite un peu de configuration à faire, il faut lui fournir un fichier 
 
 Exemple d'un fichier de configuration simple :
 
-    # Fichier config.json
-    {
-        "name": "Elao Repository",
-        "homepage": "https://satis.elao.com",
-        "repositories": [
-            { "type": "vcs", "url": "http://github.com/mycompany/privaterepo" },
-            { "type": "vcs", "url": "http://svn.example.org/private/repo" },
-            { "type": "vcs", "url": "http://github.com/mycompany/privaterepo2" }
-        ],
-        "require-all": true
-    }
+{% highlight json %}
+# Fichier config.json
+{
+    "name": "Elao Repository",
+    "homepage": "https://satis.elao.com",
+    "repositories": [
+        { "type": "vcs", "url": "http://github.com/mycompany/privaterepo" },
+        { "type": "vcs", "url": "http://svn.example.org/private/repo" },
+        { "type": "vcs", "url": "http://github.com/mycompany/privaterepo2" }
+    ],
+    "require-all": true
+}
+{% endhighlight %}
 
 Dans ce fichier, on doit déclarer les dépôts que l'on souhaite voir apparaitre dans le tableau `repositories`.
 
@@ -67,12 +72,14 @@ On ajoute ensuite l'option `require-all` afin d'indiquer que l'on souhaite pouvo
 
 Exemple:
 
-    {
-        "require": {
-            "company/package": "*",
-            "company/package2": "2.0.0"
-        }
+{% highlight json %}
+{
+    "require": {
+        "company/package": "*",
+        "company/package2": "2.0.0"
     }
+}
+{% endhighlight %}
 
 Dans l'exemple ci-dessus on indique que l'on veut disposer de toutes les versions de `company/package`, mais uniquement la version `2.0.0` de `company/package2`.
 
@@ -92,16 +99,18 @@ Pour être utilisable, votre fichier `packages.json` doit être accessible sur i
 
 A présent, dans votre `composer.json`, au lieu de déclarer un repository différent pour chacun de vos dépôts privés, il vous suffit d'en ajouter un de type composer et de définir l'url vers votre fichier `packages.json`, vous aurez ainsi accès automatiquement a tous vos dépôts.
 
-    {
-        "repositories": [
-            { "type": "composer", "url": "https://satis.elao.com/" }
-        ],
-        "require": {
-            "company/package": "1.2.0",
-            "company/package2": "1.5.2",
-            "company/package3": "dev-master"
-        }
+{% highlight json %}
+{
+    "repositories": [
+        { "type": "composer", "url": "https://satis.elao.com/" }
+    ],
+    "require": {
+        "company/package": "1.2.0",
+        "company/package2": "1.5.2",
+        "company/package3": "dev-master"
     }
+}
+{% endhighlight %}
 
 
 [Satis]: http://getcomposer.org/doc/articles/handling-private-packages-with-satis.md

@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Symfony Live 2011 - Mes retours"
+old: 55
 ---
 
 Une semaine après le Symfony Live, je me suis dis que je devrais peut-être écrire un article pour parler des conférences que je suis allé voir.

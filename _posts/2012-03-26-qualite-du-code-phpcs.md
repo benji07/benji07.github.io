@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Qualité du code: PHPCS"
+old: 66
 ---
 
 L'un des principaux problèmes rencontrés au cours de projets nécessitants l'intervention de plusieurs développeurs est l'uniformité du code et le respect des conventions de codage, qui ont (normalement) dû être mise en place.

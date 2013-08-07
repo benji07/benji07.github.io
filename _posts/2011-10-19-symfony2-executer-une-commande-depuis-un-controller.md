@@ -1,36 +1,41 @@
 ---
 layout: post
 title: "Symfony2 - Executer une commande depuis un controller"
+old: 60
 ---
 
 Il n'existe pas vraiment de méthode toute faite, il faut créer une application à partir du kernel et appeler la méthode doRun.
 
-    [php]
+{% highlight php %}
+<?php
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 
-    use Symfony\Bundle\FrameworkBundle\Console\Application;
-    use Symfony\Component\Console\Input\ArrayInput;
-    use Symfony\Component\Console\Output\NullOutput;
+public function runCommand($command, $arguments = array())
+{
+    $kernel = $this->container->get('kernel');
+    $app = new Application($kernel);
 
-    public function runCommand($command, $arguments = array())
-    {
-        $kernel = $this->container->get('kernel');
-        $app = new Application($kernel);
+    $args = array_merge(array('command' => $command), $arguments);
 
-        $args = array_merge(array('command' => $command), $arguments);
+    $input = new ArrayInput($args);
+    $output = new NullOutput();
 
-        $input = new ArrayInput($args);
-        $output = new NullOutput();
+    return $app->doRun($input, $output);
+}
+{% endhighlight %}
 
-        return $app->doRun($input, $output);
-    }
 
 Après au niveau de votre contrôleur vous pouvez faire
 
-    [php]
-    public function sendMailAction()
-    {
-        $this->runCommand('app:send-mail');
-    }
+{% highlight json %}
+<?php
+public function sendMailAction()
+{
+    $this->runCommand('app:send-mail');
+}
+{% endhighlight %}
 
 ### Modification du 23/01/12
 

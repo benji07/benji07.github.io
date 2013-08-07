@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Ouverture de mon blog"
+old: 2
 ---
 
 Bienvenue sur mon blog.

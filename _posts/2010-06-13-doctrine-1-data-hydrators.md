@@ -1,64 +1,74 @@
 ---
 layout: post
 title: "Doctrine 1 :  Data Hydrators"
+old: 16
 ---
 
 Les **Data Hydrators** dans doctrine servent à représenter en php les données retournées par une `Doctrine_Query`. Par défaut doctrine définit 8 Hydrators qui permettent de faire pratiquement tout ce que l'on veut, chacune de ces méthodes possèdent des avantages et des inconvénients. Si ces méthodes ne suffisent pas, on peut toujours en créer une nouvelle.
 
 Pour présenter les différentes méthodes d'hydratation, je vais utiliser l'exemple suivant :
 
-    [php]
-    $q = Doctrine_Core::getTable('User')->
-            createQuery('u')->
-            leftJoin('u.Profile p')->
-            where('u.username = ?', 'benji07');
-
+{% highlight php %}
+<?php
+$q = Doctrine_Core::getTable('User')->
+        createQuery('u')->
+        leftJoin('u.Profile p')->
+        where('u.username = ?', 'benji07');
+{% endhighlight %}
 
 #### `Doctrine_Core::HYDRATE_RECORD` ####
 
 C'est le type d'hydratation par défaut, lorsqu'on l'exécute sur une `Doctrine_Query` on va récupérer une `Doctrine_Collection` d'objet ou directement un objet de type `Doctrine_Record`. Avec cette méthode, on a accès a toutes les méthodes du modèle de l'objet, mais lorsque l'on veut récupérer plus d'une dizaine d'objets, on se rend compte que l'hydratation de ces objets consomme beaucoup trop de mémoire.
 
-    [php]
-    $user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_RECORD);
+{% highlight php %}
+<?php
+$user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_RECORD);
 
-    echo $user->Profile->firstname;
+echo $user->Profile->firstname;
+{% endhighlight %}
 
 #### `Doctrine_Core::HYDRATE_ARRAY` ####
 
 Au lieu de récupérer une `Doctrine_Collection`, avec cette méthode on va récupérer un tableau hiérarchisé avec toutes les données contenues dans la requête. Ce type d'hydratation est pratique lorsque l'on veut récupérer beaucoup de valeurs, car on n'a plus le problème de mémoire, vu que l'on ne crée pas des objets, mais des tableaux.
 
-    [php]
-    $user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_RECORD);
+{% highlight php %}
+<?php
+$user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_RECORD);
 
-    echo $user['Profile']['firstname'];
+echo $user['Profile']['firstname'];
+{% endhighlight %}
 
- Le problème avec cette méthode c'est que l'on n'a plus accès aux méthodes défini au niveau de l'objet. 
+Le problème avec cette méthode c'est que l'on n'a plus accès aux méthodes défini au niveau de l'objet.
 
 #### `Doctrine_Core::HYDRATE_SCALAR` ####
 
 Contrairement au mode d'hydratation précédents qui crée un tableau avec plusieurs niveaux, ce mode crée un tableau sans traitement particulier (équivalent a un `$stmt->fetchAll(PDO::FETCH_ASSOC`)). Donc au lieu d'avoir un tableau comme ça :
 
-    [php]
-    $user = array(
-      'username'  => 'benji07',
-      'password'  => '...',
-      'Profile'   => array(
-        'firstname' => 'Benjamin',
-        'lastname'  => 'Lévêque'
-      )
-    );
+{% highlight php %}
+<?php
+$user = array(
+  'username'  => 'benji07',
+  'password'  => '...',
+  'Profile'   => array(
+    'firstname' => 'Benjamin',
+    'lastname'  => 'Lévêque'
+  )
+);
+{% endhighlight %}
 
 On aura le tableau suivant :
 
-    [php]
-    $user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_SCALAR);
+{% highlight php %}
+<?php
+$user = $q->fetchOne(array(), Doctrine_Core::HYDRATE_SCALAR);
 
-    $user = array(
-      'u_username'  => 'benji07',
-      'u_password'  => '...',
-      'p_firstname' => 'Benjamin',
-      'p_lastname'  => 'Lévêque'
-    );
+$user = array(
+  'u_username'  => 'benji07',
+  'u_password'  => '...',
+  'p_firstname' => 'Benjamin',
+  'p_lastname'  => 'Lévêque'
+);
+{% endhighlight %}
 
 #### `Doctrine_Core::HYDRATE_NONE` ####
 
@@ -68,14 +78,16 @@ Ce mode d'hydratation retourne les données de la même manière que le mode `HY
 
 Encore plus poussé que le mode d'hydratation précédents, celui-ci ne renverra qu'une colonne, c'est surtout pratique lorsque l'on veut récupérer un nombre (comme le nombre de commentaire qu'un utilisateur a publié).
 
-    [php]
-    $q = Doctrine_Core::getTable('User')->
-            createQuery('u')->
-            select('COUNT(c.id)')->
-            leftJoin('u.Comments c')->
-            where('u.username = ?', 'benji07');
+{% highlight php %}
+<?php
+$q = Doctrine_Core::getTable('User')->
+        createQuery('u')->
+        select('COUNT(c.id)')->
+        leftJoin('u.Comments c')->
+        where('u.username = ?', 'benji07');
 
-    $nb_comment = $q->fetchOne(array(), Doctrine_Core::HYDRATE_SINGLE_SCALAR);
+$nb_comment = $q->fetchOne(array(), Doctrine_Core::HYDRATE_SINGLE_SCALAR);
+{% endhighlight %}
 
 #### Autres modes d'hydratation ###
 
@@ -89,22 +101,22 @@ Avec doctrine, on peut créer très simplement sa propre méthode d'hydratation,
 
 Pour le dernier projet sur lequel j'ai travaillé, j'ai eu besoin de récupérer le nombre de commentaires validés par utilisateur. Pour faire cela, j'ai crée une hydrator qui s'appuie sur la constante `PDO::FETCH_KEY_PAIR`.
 
+{% highlight php %}
+<?php
+class Doctrine_Hydrator_Pair extends Doctrine_Hydrator_Abstract
+{
+  public function hydrateResultSet($stmt)
+  {
+    $data = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    return $data;
+  }
+}
 
-    [php]
-    class Doctrine_Hydrator_Pair extends Doctrine_Hydrator_Abstract
-    {
-      public function hydrateResultSet($stmt)
-      {
-        $data = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-        return $data;
-      }
-    }
+// puis dans le bootstrap
+$manager->registerHydrator('pair', 'Doctrine_Hydrator_Pair');
 
-    // puis dans le bootstrap
-    $manager->registerHydrator('pair', 'Doctrine_Hydrator_Pair');
-
-    // et lorsque l'on veut executer la requête
-    $q->execute(array(), 'pair');
-
+// et lorsque l'on veut executer la requête
+$q->execute(array(), 'pair');
+{% endhighlight %}
 
 Retrouver plus d'information sur les Hydrator doctrine dans [la documentation officielle](http://www.doctrine-project.org/projects/orm/1.2/docs/manual/data-hydrators/en#data-hydrators).

@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Tester l'envoi de mail avec Behat dans une application Symfony2"
+old: 71
 ---
 
 Dans la dernière application que je suis en train de développer, un e-mail est envoyé au moment de l'inscription d'un utilisateur, il est donc logique d'ajouter un scénario Behat pour tester cette fonctionnalité.

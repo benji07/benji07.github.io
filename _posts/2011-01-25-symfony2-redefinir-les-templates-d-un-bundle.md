@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Symfony2 : Redéfinir les templates d'un Bundle"
+old: 54
 ---
 
 Pour savoir quel template **Symfony2** doit charger, il regarde dans les dossiers suivants et dans cet ordre bien précis :
@@ -9,11 +10,13 @@ Pour savoir quel template **Symfony2** doit charger, il regarde dans les dossier
     /src/Application/%bundle%/Resources/views/%controller%/%name%%format%.%renderer%
     /src/Bundle/%bundle%/Resources/views/%controller%/%name%%format%.%renderer%
     /src/vendor/symfony/src/Symfony/Bundle/%bundle%/Resources/views/%controller%/%name%%format%.%renderer%
-    
+
 Donc si dans une action, vous voulez rendre le template BlogBundle:Default:index.html.twig.
 
-    [php]
-    return $this->render('BlogBundle:Default:index.html.twig', array());
+{% highlight php %}
+<?php
+return $this->render('BlogBundle:Default:index.html.twig', array());
+{% endhighlight %}
 
  **Symfony2** va essayer de charger les fichiers suivants:
 

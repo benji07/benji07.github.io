@@ -1,17 +1,20 @@
 ---
 layout: post
 title: "Générer correctement les liens dans une tâches symfony"
+old: 32
 ---
 
-Au début de votre taches, il suffit de définir les variables suivantes : 
+Au début de votre taches, il suffit de définir les variables suivantes :
 
-    [php]
-    public function execute($arguments = array(), $options = array())
-    {
-      $_SERVER['HTTP_HOST'] = sfConfig::get('app_host');
-      $_SERVER['SCRIPT_NAME'] = '';
-      $_SERVER['PATH_INFO'] = '/';
-      
+{% highlight php %}
+<?php
+public function execute($arguments = array(), $options = array())
+{
+    $_SERVER['HTTP_HOST'] = sfConfig::get('app_host');
+    $_SERVER['SCRIPT_NAME'] = '';
+    $_SERVER['PATH_INFO'] = '/';
+{% endhighlight %}
+
 `HTTP_HOST` permet de définir le nom de domaine (ne pas mettre http://).
 
 `SCRIPT_NAME` contient *symfony* car on exécute une tâche.

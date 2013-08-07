@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Mettez un poney dans votre Symfony2"
+old: 67
 ---
 
 Cela fait quelque temps que j'essaie de faire respecter les *coding rules* de Symfony2 à mes collègues, pour les faire respecter j'ai décidé d'utiliser des hooks de pre-commit, mais il n'existe pas vraiment de méthode pour les installer facilement sur la machine de tous les développeurs (et puis ces règles peuvent changer suivant les projets).
