@@ -7,6 +7,7 @@ Les 1 et 2 octobre 2013, j'étais présent à la Blend Web Mix Conférence. Et j
 
 Dans l'ensemble, j'ai trouvé cette première édition bien organisé, même s'il manquait selon moi des conférences purement techniques.  Il y avait beaucoup trop de conférence marketing (ou business), ainsi que des conférences techniques mal préparées ou ne correspondant pas au sujet indiqué sur le programme (par exemple la conférence sur Grunt.js qui aurait pu être très intéressante).
 
+
 ## Introduction aux design patterns avec PHP
 
 Sujet interresant
@@ -39,19 +40,54 @@ Si vous voulez voir un retour plus complet, celui d'Alexandre Bortolli est très
 
 Liens vers [les slides](http://fr.slideshare.net/camilleroux/human-coders-recruter-un-bon-developpeur-blend)
 
-## La Web Performance
-
-Présentation tout ce qu'il y a de plus classique sur la performance, il faut activer la compression gzip au niveau d'apache, compresser et concatener ces fichiers javascripts et css
-
-Conférence en 2 partie:
-
-- [1ère partie](https://speakerdeck.com/goulvench/performances-web-pourquoi-les-optimiser-pour-mobile-et-desktop)
-- [2ème partie](http://t.co/hywaOUh0H5)
-
 ## Concevoir son API
 
+La présentation que j'attendais le plus lors du BlendWebMix, avoir un retour d'expérience et toute les bonnes pratiques qu'une personne utilise dans son travail de tout les jours, et je dois avouer que je n'ai pas était déçu.
+
+J'ai regrouper toute les bonnes pratiques suivant 3 grandes parties.
+
+### Convention
+
+C'est toujours important de définir une convention lorsque l'on crée une api ou toute autre style d'application.
+
+- Versionning
+- Construction des url
+- Date
+- Encoding
+- Paramètre
+- Pagination
+
+Prévoir le versionning dès le début, avoir un /v1/ au moment de la création de l'api
+- Il conseil de mettre le numéro de version dans l'url et d'éviter les en-tete, car c'est le plus simple a tester
+
+- Pensez au client en premier
+
+- pour le construction des url:
+    - pas de camelCase, utiliser des underscores
+    - pas de caractères spéciaux
+
+- Limiter les parametres optionnels
+- Rester coherent au niveau des paramètres (utiliser les même nom de partout, par exemple pour la pagination ou les filtres)
+
+- Ne pas utiliser de date, toujours des datetime, et penser a définir un timezone, de préférence UTC
+- Tout faire en UTF8
+
+- Pour la pagination utiliser from et length au lieux de offset
+    -> je ne suis pas d'accords avec ce point là, car on ne peut pas gérer le tri
+
+### Mise a disposition / Livrable
+
+- environnement de test
+- fournir un sdk -> fournir une application d'exemple
+- fournir des exemples (ou un generateur d'exemple, par exemple http://apiary.io/)
+
+### Sécurité
+
+- toujours utiliser de l'https
+- empecher la désactivation de la verification du SSL
+- utiliser de l'http basic ou du oauth
+- mettre une clé d'api
+- ne pas faire de truc custom
+
+
 <iframe src="http://www.slideshare.net/slideshow/embed_code/26779580" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC;border-width:1px 1px 0;margin-bottom:5px" allowfullscreen> </iframe>
-
-## Pourquoi les workers queues sont importantes pour dynamiser votre application web ?
-
-http://www.dator.fr/slides/blend13/#/
