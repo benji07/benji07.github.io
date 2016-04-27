@@ -6,7 +6,7 @@ old: 44
 
 Rien de plus simple, il faut modifier le fichier .htaccess qui est dans le dossier web/
 
-{% highlight apache %}
+{% highlight conf %}
 SetEnv REGISTER_GLOBALS 0
 SetEnv MAGIC_QUOTES 0
 SetEnv ZEND_OPTIMIZER 1
