@@ -1,5 +1,7 @@
 markdown:   kramdown
 excerpt_separator: ""
+safe: true
+permalink:  none
 
 title:  Benjamin Lévêque
 author: Benjamin Lévêque
