@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page introuvable">
+  <main class="not-found">
+    <h1>Page introuvable</h1>
+    <p class="prose">Cette page n'existe pas ou plus. <a href="/">Retour à l'accueil</a>.</p>
+  </main>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+
+  .prose {
+    margin: 0;
+  }
+</style>

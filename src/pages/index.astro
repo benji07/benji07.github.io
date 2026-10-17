@@ -1,0 +1,397 @@
+---
+import { getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE, PROJECTS } from '../lib/site';
+import { getInstagramPosts } from '../lib/instagram';
+import { getSeries, getPhotos, photoAlt } from '../lib/series';
+import { getPosts } from '../lib/blog';
+
+// Astro télécharge les images distantes en fin de build, et un échec y fait
+// tomber tout le build : on vérifie d'abord qu'elles répondent.
+async function reachable(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Photo Gravatar téléchargée au build et servie depuis le site. Si Gravatar
+// est injoignable, on garde l'URL distante plutôt que de casser le build.
+let avatar = SITE.gravatar;
+if (await reachable(SITE.gravatar)) {
+  avatar = (await getImage({ src: SITE.gravatar, width: 240, height: 240, format: 'webp' })).src;
+} else {
+  console.warn('[gravatar] injoignable, image servie depuis gravatar.com');
+}
+
+// Vignettes : Instagram si le jeton est configuré, sinon les dernières
+// photos du portfolio, sinon rien (le bloc @benji07 reste affiché).
+const instagram = await getInstagramPosts(6);
+const thumbs: { src: string; href: string; alt: string }[] = [];
+for (const post of instagram) {
+  if (!(await reachable(post.image))) continue;
+  try {
+    const image = await getImage({ src: post.image, inferSize: true, width: 360, height: 450, fit: 'cover', format: 'webp' });
+    thumbs.push({ src: image.src, href: post.permalink, alt: post.caption || 'Photo Instagram' });
+  } catch (error) {
+    console.warn('[instagram] vignette ignorée :', error);
+  }
+}
+let thumbsFrom: 'instagram' | 'portfolio' = 'instagram';
+if (thumbs.length === 0) {
+  thumbsFrom = 'portfolio';
+  for (const series of await getSeries()) {
+    for (const [index, photo] of getPhotos(series).entries()) {
+      if (thumbs.length >= 6) break;
+      const image = await getImage({ src: photo.src, width: 360, height: 450, fit: 'cover', format: 'webp' });
+      thumbs.push({ src: image.src, href: `/portfolio/${series.id}/${photo.slug}/`, alt: photoAlt(series, photo, index) });
+    }
+  }
+}
+
+const posts = await getPosts();
+const firstYear = posts.at(-1)?.date.getUTCFullYear();
+const lastYear = posts[0]?.date.getUTCFullYear();
+---
+
+<BaseLayout current="home">
+  <main class="home">
+    <section class="intro">
+      <img class="avatar" src={avatar} width="120" height="120" alt="Benjamin Lévêque" />
+      <h1>Benjamin Lévêque</h1>
+      <div class="bio">
+        <p>
+          <strong>Je photographie sur film et je tire moi-même mes négatifs couleur</strong>, en RA-4, dans une
+          chambre noire montée chez moi.
+        </p>
+        <p>
+          Côté métier, je suis développeur chez Elao, à Lyon. Longtemps PHP et Symfony ; aujourd'hui, avec
+          l'arrivée de l'IA, plutôt TypeScript et React, toujours sur des applications à forte valeur métier.
+        </p>
+      </div>
+      <p class="links mono">
+        <a href="/portfolio/">Portfolio →</a>
+        <a href={SITE.github}>GitHub ↗</a>
+        <a href={SITE.linkedin}>LinkedIn ↗</a>
+      </p>
+    </section>
+
+    <section class="instagram section" id="instagram" aria-labelledby="instagram-title">
+      <div class="instagram-head">
+        <div class="instagram-title">
+          <span class="label">{thumbsFrom === 'instagram' && thumbs.length > 0 ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
+          <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
+        </div>
+        <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+      </div>
+      {
+        thumbs.length > 0 && (
+          <ul class="thumbs" role="list">
+            {thumbs.map((thumb) => (
+              <li>
+                <a href={thumb.href}>
+                  <img src={thumb.src} alt={thumb.alt} width="360" height="450" loading="lazy" decoding="async" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {
+        thumbsFrom === 'portfolio' && thumbs.length > 0 && (
+          <a class="thumbs-caption mono" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>
+        )
+      }
+      <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+    </section>
+
+    <section class="initiations section" id="initiations" aria-labelledby="initiations-title">
+      <span class="label">Initiations</span>
+      <h2 id="initiations-title">Apprendre le tirage couleur</h2>
+      <p class="prose">
+        J'organise des initiations au tirage argentique couleur dans ma chambre noire. Tu repars avec tes propres
+        tirages, faits à partir de tes négatifs.
+      </p>
+      <span class="mono facts-line">Le week-end, l'après-midi · 2 personnes max · Prix libre</span>
+      <div class="actions">
+        <a class="button" href="/initiations/">Comment ça se passe →</a>
+        <a class="mono" href={SITE.instagram}>Demander une date ↗</a>
+      </div>
+    </section>
+
+    <section class="projects" aria-labelledby="projects-title">
+      <h2 id="projects-title" class="label">Projets</h2>
+      <ul role="list">
+        {
+          PROJECTS.map((project) => (
+            <li>
+              <a href={project.url}>
+                <span class="name">{project.name}</span>
+                <span class="hint">{project.hint} ↗</span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href="/blog/">
+            <span class="name">Blog</span>
+            <span class="hint">archives {firstYear}–{lastYear} →</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .home {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas:
+      'intro insta'
+      'init projects';
+    gap: 56px 72px;
+    align-items: start;
+  }
+
+  .intro {
+    grid-area: intro;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .instagram {
+    grid-area: insta;
+  }
+
+  .initiations {
+    grid-area: init;
+    max-width: 44ch;
+  }
+
+  .projects {
+    grid-area: projects;
+  }
+
+  .avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--soft);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(44px, 6vw, 64px);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .bio {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text);
+    max-width: 40ch;
+  }
+
+  .bio p {
+    margin: 0;
+  }
+
+  .bio strong {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .links {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+    font-size: 14px;
+  }
+
+  .links a {
+    padding: 6px 0;
+  }
+
+  .instagram-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .instagram-title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .handle {
+    color: var(--fg);
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .thumbs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .thumbs img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: var(--soft);
+    transition: opacity 0.15s;
+  }
+
+  .thumbs a:hover img {
+    opacity: 0.85;
+  }
+
+  .thumbs-caption {
+    font-size: 13px;
+  }
+
+  .initiations h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .initiations .prose {
+    margin: 0;
+  }
+
+  .facts-line {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    font-size: 14px;
+  }
+
+  .projects {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .projects h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .projects ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  .projects a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    border-bottom: 1px solid var(--line);
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .projects a:hover .name {
+    text-decoration: underline;
+  }
+
+  .name {
+    font-weight: 500;
+  }
+
+  .hint {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .mobile-only {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .mobile-only {
+      display: inline-flex;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .home {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'intro' 'insta' 'init' 'projects';
+      gap: 40px;
+    }
+
+    .avatar {
+      align-self: center;
+    }
+
+    .initiations {
+      max-width: none;
+    }
+
+    .handle {
+      font-size: 40px;
+    }
+
+    .thumbs {
+      gap: 4px;
+    }
+
+    .projects ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bio {
+      font-size: 17px;
+    }
+
+
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+  }
+</style>

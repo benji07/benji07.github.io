@@ -1,0 +1,174 @@
+---
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getSeries, getPhotos, photoAlt, FORMAT_LABELS, type Series, type SeriesPhoto } from '../../../lib/series';
+
+export async function getStaticPaths() {
+  const all = await getSeries();
+  return all.flatMap((series) => {
+    const photos = getPhotos(series);
+    return photos.map((photo, index) => ({
+      params: { serie: series.id, photo: photo.slug },
+      props: { series, photo, index, previous: photos[index - 1], next: photos[index + 1] },
+    }));
+  });
+}
+
+interface Props {
+  series: Series;
+  photo: SeriesPhoto;
+  index: number;
+  previous?: SeriesPhoto;
+  next?: SeriesPhoto;
+}
+
+const { series, photo, index, previous, next } = Astro.props;
+const alt = photoAlt(series, photo, index);
+const title = photo.title ?? `${series.data.title}, ${index + 1}/${series.data.photos.length}`;
+const og = await getImage({ src: photo.src, width: 1200, format: 'jpg' });
+
+const facts = [
+  ['Format', FORMAT_LABELS[series.data.format]],
+  ['Appareil', photo.camera],
+  ['Pellicule', photo.film ?? series.data.film],
+  ['Tirage', photo.print],
+  ['Date', photo.date ?? String(series.data.year)],
+].filter((fact): fact is [string, string] => Boolean(fact[1]));
+
+const base = `/portfolio/${series.id}`;
+---
+
+<BaseLayout title={title} current="portfolio" ogImage={og.src} description={photo.description ?? `${series.data.title} : ${title}`}>
+  <main class="photo-page">
+    <nav class="nav mono" aria-label="Navigation dans la série">
+      <a class="back" href={`${base}/`}>← {series.data.title}</a>
+      <span class="arrows">
+        {previous ? <a href={`${base}/${previous.slug}/`} aria-label="Photo précédente">← <span class="desktop">Précédente</span></a> : <span />}
+        {next && <a href={`${base}/${next.slug}/`} aria-label="Photo suivante"><span class="desktop">Suivante</span> →</a>}
+      </span>
+    </nav>
+
+    <div class="layout">
+      <figure class="frame">
+        <Image src={photo.src} alt={alt} widths={[640, 1024, 1600, 2048]} sizes="(max-width: 960px) 100vw, 66vw" loading="eager" />
+      </figure>
+
+      <div class="info">
+        <div class="heading">
+          <span class="label">{series.data.title}</span>
+          <h1>{title}</h1>
+        </div>
+        {photo.description && <p class="prose">{photo.description}</p>}
+        <dl class="facts">
+          {
+            facts.map(([term, value]) => (
+              <>
+                <dt>{term}</dt>
+                <dd>{value}</dd>
+              </>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .photo-page {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .back {
+    color: var(--fg);
+  }
+
+  .arrows {
+    display: flex;
+    gap: 20px;
+  }
+
+  .arrows a {
+    color: var(--muted);
+    padding: 12px 0;
+  }
+
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px 56px;
+    align-items: flex-start;
+  }
+
+  .frame {
+    flex: 999 1 560px;
+    min-width: 0;
+    margin: 0;
+    background: var(--soft);
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .frame img {
+    max-height: 80vh;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .info {
+    flex: 1 1 280px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .heading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .info .prose {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  @media (max-width: 640px) {
+    .frame {
+      margin: 0 calc(-1 * var(--gutter));
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 30px;
+    }
+
+    .desktop {
+      display: none;
+    }
+
+    .arrows a {
+      padding: 12px;
+    }
+  }
+</style>

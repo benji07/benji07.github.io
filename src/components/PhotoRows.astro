@@ -1,0 +1,95 @@
+---
+// Photos d'une série en lignes justifiées : chaque photo garde son format,
+// toutes les photos d'une ligne ont la même hauteur.
+import { Image } from 'astro:assets';
+import type { Series } from '../lib/series';
+import { getPhotos, photoAlt } from '../lib/series';
+
+interface Props {
+  series: Series;
+}
+
+const { series } = Astro.props;
+const photos = getPhotos(series);
+const polaroid = series.data.format === 'polaroid';
+---
+
+<ul class:list={['rows', { polaroid }]} role="list">
+  {
+    photos.map((photo, index) => {
+      const ratio = photo.src.width / photo.src.height;
+      return (
+        <li style={`--ratio: ${ratio.toFixed(4)}`}>
+          <a href={`/portfolio/${series.id}/${photo.slug}/`}>
+            <Image
+              src={photo.src}
+              alt={photoAlt(series, photo, index)}
+              widths={[480, 800, 1200]}
+              sizes="(max-width: 640px) 100vw, 50vw"
+            />
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  .rows {
+    --row: 300px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Empêche la dernière ligne de s'étirer démesurément. */
+  .rows::after {
+    content: '';
+    flex-grow: 999;
+  }
+
+  li {
+    flex: var(--ratio) 1 calc(var(--ratio) * var(--row));
+    min-width: 0;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--ratio);
+    object-fit: cover;
+    background: var(--soft);
+    transition: opacity 0.15s;
+  }
+
+  a:hover img {
+    opacity: 0.88;
+  }
+
+  .polaroid {
+    --row: 260px;
+    background: #eef0f3;
+    padding: 32px;
+    gap: 24px;
+  }
+
+  .polaroid img {
+    box-shadow: 0 1px 3px rgba(17, 18, 20, 0.18);
+  }
+
+  @media (max-width: 640px) {
+    .rows {
+      --row: 150px;
+      gap: 8px;
+    }
+
+    .polaroid {
+      --row: 140px;
+      padding: 16px;
+      gap: 16px;
+    }
+  }
+</style>

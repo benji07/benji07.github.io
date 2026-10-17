@@ -1,0 +1,59 @@
+---
+// Couverture d'une série : la photo, entière, posée sur une version floue
+// d'elle-même. Les Polaroid gardent leur cadre (le scan l'inclut).
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  polaroid?: boolean;
+}
+
+const { src, alt, polaroid = false } = Astro.props;
+const blur = await getImage({ src, width: 48, format: 'webp' });
+const landscape = src.width >= src.height;
+---
+
+<div class="cover" style={`--blur: url(${blur.src})`}>
+  <Image
+    src={src}
+    alt={alt}
+    widths={[320, 480, 720]}
+    sizes="(max-width: 640px) 45vw, 30vw"
+    class:list={['photo', { landscape, polaroid }]}
+  />
+</div>
+
+<style>
+  .cover {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--soft);
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: -15%;
+    background: var(--blur) center / cover;
+    filter: blur(24px) saturate(1.1);
+  }
+
+  .photo {
+    position: relative;
+    max-width: 62%;
+    max-height: 70%;
+    width: auto;
+    height: auto;
+    box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
+  }
+
+  .photo.landscape {
+    max-width: 84%;
+  }
+</style>

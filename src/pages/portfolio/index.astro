@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Cover from '../../components/Cover.astro';
+import { getSeries, getCover, seriesMeta } from '../../lib/series';
+
+const series = await getSeries();
+---
+
+<BaseLayout title="Portfolio" current="portfolio" description="Mes séries de photos argentiques, en 135, 6×6 et Polaroid.">
+  <main class="portfolio">
+    <h1>Portfolio</h1>
+    {
+      series.length === 0 ? (
+        <p class="prose empty">Les premières séries arrivent bientôt.</p>
+      ) : (
+        <ul class="grid" role="list">
+          {series.map((entry) => (
+            <li>
+              <a href={`/portfolio/${entry.id}/`}>
+                <Cover src={getCover(entry)} alt="" polaroid={entry.data.format === 'polaroid'} />
+                <span class="title">{entry.data.title}</span>
+                <span class="label">{seriesMeta(entry)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .portfolio {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(48px, 7vw, 72px);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 48px 32px;
+  }
+
+  .grid a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .grid a :global(.cover) {
+    margin-bottom: 8px;
+  }
+
+  .grid a:hover .title {
+    text-decoration: underline;
+  }
+
+  .title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .empty {
+    margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px 12px;
+    }
+
+    .title {
+      font-size: 16px;
+    }
+
+    .label {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+  }
+</style>

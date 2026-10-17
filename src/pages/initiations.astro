@@ -1,0 +1,241 @@
+---
+import { getEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../lib/site';
+
+const page = await getEntry('initiations', 'index');
+const { video, setup = [], prints = [] } = page?.data ?? {};
+
+// https://www.youtube.com/watch?v=ID, https://youtu.be/ID ou /shorts/ID -> ID
+function youtubeId(url: string): string | undefined {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+  return match?.[1];
+}
+const youtube = video ? youtubeId(video) : undefined;
+const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
+---
+
+<BaseLayout
+  title="Initiations au tirage couleur"
+  current="initiations"
+  description="Initiations au tirage argentique couleur (RA-4) dans ma chambre noire, à Villeurbanne. Le week-end, 2 personnes max, prix libre."
+>
+  <main class="initiations">
+    <div class:list={['text', { alone: !hasMedia }]}>
+      <span class="label">Initiations</span>
+      <h1>Apprendre le tirage couleur</h1>
+      <p class="prose">
+        J'organise des initiations au tirage argentique couleur dans ma chambre noire. Tu repars avec tes propres
+        tirages, faits à partir de tes négatifs.
+      </p>
+      <dl class="facts">
+        <dt>Quand</dt>
+        <dd>Le week-end, l'après-midi</dd>
+        <dt>Où</dt>
+        <dd>Chez moi, à Villeurbanne</dd>
+        <dt>Groupe</dt>
+        <dd>2 personnes max</dd>
+        <dt>Prix</dt>
+        <dd>Libre</dd>
+        <dt>À apporter</dt>
+        <dd>Tes négatifs couleur, en 35 mm ou en 120 jusqu'au 6×6</dd>
+      </dl>
+      <a class="button button--solid" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+    </div>
+
+    {hasMedia && <div class="media">
+      {
+        video && (
+          <section>
+            <h2 class="label">Comment ça se passe</h2>
+            {youtube ? (
+              <iframe
+                class="video"
+                src={`https://www.youtube-nocookie.com/embed/${youtube}`}
+                title="Une initiation au tirage couleur"
+                loading="lazy"
+                allow="encrypted-media; picture-in-picture"
+                allowfullscreen
+              />
+            ) : (
+              <video class="video" src={video} controls preload="metadata" />
+            )}
+          </section>
+        )
+      }
+
+      {
+        setup.length > 0 && (
+          <section>
+            <h2 class="label">Le setup</h2>
+            <ul class="setup" role="list">
+              {setup.map((item) => (
+                <li>
+                  <figure>
+                    <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 640px) 50vw, 25vw" />
+                    {item.caption && <figcaption>{item.caption}</figcaption>}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        prints.length > 0 && (
+          <section>
+            <h2 class="label">Tirages faits pendant les initiations</h2>
+            <ul class="prints" role="list">
+              {prints.map((item) => (
+                <li style={`--ratio: ${(item.src.width / item.src.height).toFixed(4)}`}>
+                  <figure>
+                    <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
+                    {item.caption && <figcaption>{item.caption}</figcaption>}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </div>}
+  </main>
+</BaseLayout>
+
+<style>
+  .initiations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 48px 64px;
+    align-items: flex-start;
+  }
+
+  .text {
+    flex: 1 1 320px;
+    max-width: 400px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .text .prose {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .text .button {
+    align-self: flex-start;
+    min-height: 48px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(40px, 5vw, 52px);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+  }
+
+  .media {
+    flex: 999 1 600px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .text.alone {
+    max-width: 560px;
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: var(--soft);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  figcaption {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .setup {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .setup img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .prints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .prints::after {
+    content: '';
+    flex-grow: 999;
+  }
+
+  .prints li {
+    flex: var(--ratio) 1 calc(var(--ratio) * 280px);
+    min-width: 0;
+  }
+
+  .prints img {
+    width: 100%;
+    aspect-ratio: var(--ratio);
+  }
+
+  @media (max-width: 640px) {
+    .text {
+      max-width: none;
+    }
+
+    .text .button {
+      align-self: stretch;
+    }
+
+    .setup {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .prints li {
+      flex-basis: calc(var(--ratio) * 150px);
+    }
+  }
+</style>

@@ -1,0 +1,42 @@
+name: Refresh Instagram token
+
+# Le jeton Instagram expire au bout de 60 jours. Ce workflow le prolonge
+# chaque semaine et réécrit le secret INSTAGRAM_ACCESS_TOKEN.
+# Il a besoin d'un second secret, GH_SECRETS_TOKEN : un fine-grained PAT
+# limité à ce dépôt avec la permission « Secrets : Read and write »
+# (le GITHUB_TOKEN par défaut ne peut pas écrire de secrets).
+
+on:
+  schedule:
+    - cron: '43 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prolonger le jeton
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$GH_TOKEN" ]; then
+            echo "Secrets INSTAGRAM_ACCESS_TOKEN ou GH_SECRETS_TOKEN absents : rien à faire."
+            exit 0
+          fi
+          response=$(curl -sS --fail-with-body --get "https://graph.instagram.com/refresh_access_token" \
+            --data-urlencode "grant_type=ig_refresh_token" \
+            --data-urlencode "access_token=$INSTAGRAM_ACCESS_TOKEN")
+          token=$(echo "$response" | jq -r '.access_token // empty')
+          expires=$(echo "$response" | jq -r '.expires_in // empty')
+          if [ -z "$token" ]; then
+            echo "::error::Échec du renouvellement : $(echo "$response" | jq -c 'del(.access_token)')"
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          gh secret set INSTAGRAM_ACCESS_TOKEN --repo "$REPO" --body "$token"
+          echo "Jeton prolongé, valable encore $((expires / 86400)) jours."
