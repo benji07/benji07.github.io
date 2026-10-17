@@ -1,6 +1,6 @@
 # benjamin.leveque.me — guide pour l'agent
 
-Site perso statique (Astro 6), en français, déployé sur GitHub Pages par
+Site perso statique (Astro 7), en français, déployé sur GitHub Pages par
 `.github/workflows/deploy.yml`. Design minimaliste : fond blanc, Geist et
 Geist Mono, un seul accent bleu (#2346d8) réservé aux liens. Pas de
 dégradé, pas de fond crème.
