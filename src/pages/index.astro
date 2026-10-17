@@ -1,17 +1,21 @@
 ---
 import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SITE, PROJECTS } from '../lib/site';
+import { SITE } from '../lib/site';
+import { getPage, getProjects, getWorkshops } from '../lib/content';
 import { getInstagramPosts } from '../lib/instagram';
 import { getSeries, getPhotos, photoAlt } from '../lib/series';
 import { getPosts } from '../lib/blog';
+
+const page = await getPage('accueil');
+const workshops = await getWorkshops();
+const projects = await getProjects();
 
 // Astro télécharge les images distantes en fin de build, et un échec y fait
 // tomber tout le build : on vérifie d'abord qu'elles répondent.
 async function reachable(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.ok;
+    return (await fetch(url, { method: 'HEAD' })).ok;
   } catch {
     return false;
   }
@@ -28,20 +32,14 @@ if (await reachable(SITE.gravatar)) {
 
 // Vignettes : Instagram si le jeton est configuré, sinon les dernières
 // photos du portfolio, sinon rien (le bloc @benji07 reste affiché).
-const instagram = await getInstagramPosts(6);
 const thumbs: { src: string; href: string; alt: string }[] = [];
-for (const post of instagram) {
+for (const post of await getInstagramPosts(6)) {
   if (!(await reachable(post.image))) continue;
-  try {
-    const image = await getImage({ src: post.image, inferSize: true, width: 360, height: 450, fit: 'cover', format: 'webp' });
-    thumbs.push({ src: image.src, href: post.permalink, alt: post.caption || 'Photo Instagram' });
-  } catch (error) {
-    console.warn('[instagram] vignette ignorée :', error);
-  }
+  const image = await getImage({ src: post.image, inferSize: true, width: 360, height: 450, fit: 'cover', format: 'webp' });
+  thumbs.push({ src: image.src, href: post.permalink, alt: post.caption || 'Photo Instagram' });
 }
-let thumbsFrom: 'instagram' | 'portfolio' = 'instagram';
-if (thumbs.length === 0) {
-  thumbsFrom = 'portfolio';
+const fromInstagram = thumbs.length > 0;
+if (!fromInstagram) {
   for (const series of await getSeries()) {
     for (const [index, photo] of getPhotos(series).entries()) {
       if (thumbs.length >= 6) break;
@@ -52,25 +50,15 @@ if (thumbs.length === 0) {
 }
 
 const posts = await getPosts();
-const firstYear = posts.at(-1)?.date.getUTCFullYear();
-const lastYear = posts[0]?.date.getUTCFullYear();
+const years = `${posts.at(-1)?.date.getUTCFullYear()}–${posts[0]?.date.getUTCFullYear()}`;
 ---
 
 <BaseLayout current="home">
   <main class="home">
     <section class="intro">
-      <img class="avatar" src={avatar} width="120" height="120" alt="Benjamin Lévêque" />
-      <h1>Benjamin Lévêque</h1>
-      <div class="bio">
-        <p>
-          <strong>Je photographie sur film et je tire moi-même mes négatifs couleur</strong>, en RA-4, dans une
-          chambre noire montée chez moi.
-        </p>
-        <p>
-          Côté métier, je suis développeur chez Elao, à Lyon. Longtemps PHP et Symfony ; aujourd'hui, avec
-          l'arrivée de l'IA, plutôt TypeScript et React, toujours sur des applications à forte valeur métier.
-        </p>
-      </div>
+      <img class="avatar" src={avatar} width="120" height="120" alt={page.title} />
+      <h1 class="title">{page.title}</h1>
+      <div class="prose bio"><page.Content /></div>
       <p class="links mono">
         <a href="/portfolio/">Portfolio →</a>
         <a href={SITE.github}>GitHub ↗</a>
@@ -78,10 +66,10 @@ const lastYear = posts[0]?.date.getUTCFullYear();
       </p>
     </section>
 
-    <section class="instagram section" id="instagram" aria-labelledby="instagram-title">
+    <section class="instagram section" aria-labelledby="instagram-title">
       <div class="instagram-head">
         <div class="instagram-title">
-          <span class="label">{thumbsFrom === 'instagram' && thumbs.length > 0 ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
+          <span class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
           <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
         </div>
         <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
@@ -99,45 +87,44 @@ const lastYear = posts[0]?.date.getUTCFullYear();
           </ul>
         )
       }
-      {
-        thumbsFrom === 'portfolio' && thumbs.length > 0 && (
-          <a class="thumbs-caption mono" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>
-        )
-      }
+      {!fromInstagram && thumbs.length > 0 && <a class="mono caption" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>}
       <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
     </section>
 
-    <section class="initiations section" id="initiations" aria-labelledby="initiations-title">
-      <span class="label">Initiations</span>
-      <h2 id="initiations-title">Apprendre le tirage couleur</h2>
-      <p class="prose">
-        J'organise des initiations au tirage argentique couleur dans ma chambre noire. Tu repars avec tes propres
-        tirages, faits à partir de tes négatifs.
-      </p>
-      <span class="mono facts-line">Le week-end, l'après-midi · 2 personnes max · Prix libre</span>
-      <div class="actions">
-        <a class="button" href="/initiations/">Comment ça se passe →</a>
-        <a class="mono" href={SITE.instagram}>Demander une date ↗</a>
-      </div>
-    </section>
+    <div class="workshops">
+      {
+        workshops.map((workshop) => (
+          <section class="section" aria-labelledby={`workshop-${workshop.id}`}>
+            <span class="label">Workshop</span>
+            <h2 id={`workshop-${workshop.id}`} class="title title--s">{workshop.data.title}</h2>
+            <p class="prose">{workshop.data.summary}</p>
+            {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
+            <div class="actions">
+              <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
+              <a class="mono caption" href={SITE.instagram}>Demander une date ↗</a>
+            </div>
+          </section>
+        ))
+      }
+    </div>
 
     <section class="projects" aria-labelledby="projects-title">
       <h2 id="projects-title" class="label">Projets</h2>
-      <ul role="list">
+      <ul class="link-list" role="list">
         {
-          PROJECTS.map((project) => (
+          projects.map(({ data }) => (
             <li>
-              <a href={project.url}>
-                <span class="name">{project.name}</span>
-                <span class="hint">{project.hint} ↗</span>
+              <a href={data.url}>
+                <span>{data.name}</span>
+                <span class="hint">{data.hint} ↗</span>
               </a>
             </li>
           ))
         }
         <li>
           <a href="/blog/">
-            <span class="name">Blog</span>
-            <span class="hint">archives {firstYear}–{lastYear} →</span>
+            <span>Blog</span>
+            <span class="hint">archives {years} →</span>
           </a>
         </li>
       </ul>
@@ -146,12 +133,14 @@ const lastYear = posts[0]?.date.getUTCFullYear();
 </BaseLayout>
 
 <style>
+  /* Desktop : présentation | Instagram, puis workshops | projets.
+     Mobile : une seule colonne dans cet ordre. */
   .home {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
     grid-template-areas:
       'intro insta'
-      'init projects';
+      'workshops projects';
     gap: 56px 72px;
     align-items: start;
   }
@@ -167,13 +156,19 @@ const lastYear = posts[0]?.date.getUTCFullYear();
     grid-area: insta;
   }
 
-  .initiations {
-    grid-area: init;
+  .workshops {
+    grid-area: workshops;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
     max-width: 44ch;
   }
 
   .projects {
     grid-area: projects;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .avatar {
@@ -184,31 +179,9 @@ const lastYear = posts[0]?.date.getUTCFullYear();
     background: var(--soft);
   }
 
-  h1 {
-    margin: 0;
-    font-size: clamp(44px, 6vw, 64px);
-    font-weight: 600;
-    letter-spacing: -0.045em;
-    line-height: 0.95;
-  }
-
   .bio {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
     font-size: 18px;
-    line-height: 1.6;
-    color: var(--text);
     max-width: 40ch;
-  }
-
-  .bio p {
-    margin: 0;
-  }
-
-  .bio strong {
-    color: var(--fg);
-    font-weight: 500;
   }
 
   .links {
@@ -239,7 +212,7 @@ const lastYear = posts[0]?.date.getUTCFullYear();
 
   .handle {
     color: var(--fg);
-    font-size: 48px;
+    font-size: clamp(40px, 5vw, 48px);
     font-weight: 600;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -259,32 +232,22 @@ const lastYear = posts[0]?.date.getUTCFullYear();
     aspect-ratio: 4 / 5;
     object-fit: cover;
     background: var(--soft);
-    transition: opacity 0.15s;
   }
 
   .thumbs a:hover img {
     opacity: 0.85;
   }
 
-  .thumbs-caption {
+  .caption {
     font-size: 13px;
   }
 
-  .initiations h2 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-  }
-
-  .initiations .prose {
-    margin: 0;
-  }
-
-  .facts-line {
-    font-size: 13px;
+  .muted {
     color: var(--muted);
+  }
+
+  .workshops .prose {
+    margin: 0;
   }
 
   .actions {
@@ -292,13 +255,6 @@ const lastYear = posts[0]?.date.getUTCFullYear();
     flex-wrap: wrap;
     align-items: center;
     gap: 12px 20px;
-    font-size: 14px;
-  }
-
-  .projects {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
 
   .projects h2 {
@@ -307,57 +263,19 @@ const lastYear = posts[0]?.date.getUTCFullYear();
   }
 
   .projects ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 32px;
-    border-top: 1px solid var(--line);
-  }
-
-  .projects a {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    min-height: 48px;
-    border-bottom: 1px solid var(--line);
-    color: var(--fg);
-    text-decoration: none;
-  }
-
-  .projects a:hover .name {
-    text-decoration: underline;
-  }
-
-  .name {
-    font-weight: 500;
-  }
-
-  .hint {
-    font-size: 14px;
-    color: var(--muted);
   }
 
   .mobile-only {
     display: none;
   }
 
-  @media (max-width: 640px) {
-    .mobile-only {
-      display: inline-flex;
-    }
-
-    .desktop-only {
-      display: none;
-    }
-  }
-
   @media (max-width: 860px) {
     .home {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'intro' 'insta' 'init' 'projects';
+      grid-template-areas: 'intro' 'insta' 'workshops' 'projects';
       gap: 40px;
     }
 
@@ -365,12 +283,8 @@ const lastYear = posts[0]?.date.getUTCFullYear();
       align-self: center;
     }
 
-    .initiations {
+    .workshops {
       max-width: none;
-    }
-
-    .handle {
-      font-size: 40px;
     }
 
     .thumbs {
@@ -383,10 +297,17 @@ const lastYear = posts[0]?.date.getUTCFullYear();
   }
 
   @media (max-width: 640px) {
+    .mobile-only {
+      display: inline-flex;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+
     .bio {
       font-size: 17px;
     }
-
 
     .actions {
       flex-direction: column;

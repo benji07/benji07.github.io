@@ -41,7 +41,7 @@ const base = `/portfolio/${series.id}`;
 <BaseLayout title={title} current="portfolio" ogImage={og.src} description={photo.description ?? `${series.data.title} : ${title}`}>
   <main class="photo-page">
     <nav class="nav mono" aria-label="Navigation dans la série">
-      <a class="back" href={`${base}/`}>← {series.data.title}</a>
+      <a class="back current" href={`${base}/`}>← {series.data.title}</a>
       <span class="arrows">
         {previous ? <a href={`${base}/${previous.slug}/`} aria-label="Photo précédente">← <span class="desktop">Précédente</span></a> : <span />}
         {next && <a href={`${base}/${next.slug}/`} aria-label="Photo suivante"><span class="desktop">Suivante</span> →</a>}
@@ -56,7 +56,7 @@ const base = `/portfolio/${series.id}`;
       <div class="info">
         <div class="heading">
           <span class="label">{series.data.title}</span>
-          <h1>{title}</h1>
+          <h1 class="title title--m">{title}</h1>
         </div>
         {photo.description && <p class="prose">{photo.description}</p>}
         <dl class="facts">
@@ -89,7 +89,7 @@ const base = `/portfolio/${series.id}`;
     font-size: 13px;
   }
 
-  .back {
+  .current {
     color: var(--fg);
   }
 
@@ -140,14 +140,6 @@ const base = `/portfolio/${series.id}`;
     gap: 8px;
   }
 
-  h1 {
-    margin: 0;
-    font-size: 36px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-  }
-
   .info .prose {
     margin: 0;
     font-size: 16px;
@@ -157,10 +149,6 @@ const base = `/portfolio/${series.id}`;
     .frame {
       margin: 0 calc(-1 * var(--gutter));
       padding: 16px;
-    }
-
-    h1 {
-      font-size: 30px;
     }
 
     .desktop {

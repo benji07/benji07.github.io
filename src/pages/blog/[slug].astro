@@ -18,9 +18,9 @@ const { Content } = await render(post);
 
 <BaseLayout title={post.data.title} current="blog">
   <main class="post">
-    <a class="back mono" href="/blog/">← Archives du blog</a>
+    <a class="back" href="/blog/">← Archives du blog</a>
     <header>
-      <h1>{post.data.title}</h1>
+      <h1 class="title title--m">{post.data.title}</h1>
       <time class="label" datetime={post.date.toISOString().slice(0, 10)}>{formatDate(post.date)}</time>
     </header>
     <p class="notice">Article publié en {post.date.getUTCFullYear()} et conservé en l'état : son contenu est probablement dépassé.</p>
@@ -38,23 +38,10 @@ const { Content } = await render(post);
     gap: 24px;
   }
 
-  .back {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
   header {
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: clamp(30px, 4vw, 42px);
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
   }
 
   .notice {

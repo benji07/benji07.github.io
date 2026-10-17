@@ -1,11 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPage } from '../lib/content';
+
+const page = await getPage('404');
 ---
 
-<BaseLayout title="Page introuvable">
+<BaseLayout title={page.title}>
   <main class="not-found">
-    <h1>Page introuvable</h1>
-    <p class="prose">Cette page n'existe pas ou plus. <a href="/">Retour à l'accueil</a>.</p>
+    <h1 class="title title--l">{page.title}</h1>
+    <div class="prose"><page.Content /></div>
   </main>
 </BaseLayout>
 
@@ -14,16 +17,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     display: flex;
     flex-direction: column;
     gap: 16px;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 48px;
-    font-weight: 600;
-    letter-spacing: -0.04em;
-  }
-
-  .prose {
-    margin: 0;
   }
 </style>

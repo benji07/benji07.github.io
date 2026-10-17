@@ -23,15 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Build avec Astro
-        # withastro/action installe les dépendances, lance `astro build`
-        # et téléverse l'artefact Pages depuis ./dist automatiquement.
-        # node-version épinglé : Astro 7 exige Node >= 22.22 (le défaut de
-        # l'action v3 est encore Node 20, qui ferait échouer le build).
-        uses: withastro/action@v3
-        with:
-          node-version: 22
+        # withastro/action installe les dépendances (Node 24 par défaut),
+        # lance `astro build` et téléverse l'artefact Pages depuis ./dist.
+        uses: withastro/action@v6
         env:
           # Facultatif : sans jeton, l'accueil affiche les dernières photos du portfolio.
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
@@ -45,4 +41,4 @@ jobs:
     steps:
       - name: Déploiement sur GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

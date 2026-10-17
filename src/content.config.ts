@@ -1,5 +1,5 @@
 import { defineCollection, z } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { glob, file } from 'astro/loaders';
 
 // Archives du blog (2009–2016), migrées telles quelles depuis Jekyll.
 // Le nom de fichier porte la date : 2010-06-13-doctrine-1-data-hydrators.md
@@ -56,21 +56,49 @@ const series = defineCollection({
     }),
 });
 
-// Contenu de la page /initiations/ : vidéo, photos du setup, exemples de tirages.
-// Chaque bloc est masqué tant qu'il est vide.
-const initiations = defineCollection({
-  loader: glob({ pattern: 'index.md', base: './src/content/initiations' }),
+// Textes des pages (accueil, portfolio, blog…) : un fichier markdown par page,
+// le corps est le texte affiché, le frontmatter le titre et la description.
+const pages = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/pages' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+  }),
+});
+
+const media = ({ image }: { image: () => any }) =>
+  z.object({ src: image(), caption: z.string().optional(), alt: z.string().optional() });
+
+// Un workshop = un dossier src/content/workshops/<slug>/ avec son index.md
+// (et ses images). Le corps du markdown est le texte de la page.
+const workshops = defineCollection({
+  loader: glob({ pattern: '*/index.md', base: './src/content/workshops' }),
   schema: ({ image }) =>
     z.object({
-      // Lien YouTube, ou chemin d'une vidéo placée dans public/ (ex : /videos/initiation.mp4).
+      title: z.string(),
+      // Affiché sur l'accueil et dans la liste des workshops.
+      summary: z.string(),
+      // Ligne d'infos pratiques sous le résumé.
+      infos: z.string().optional(),
+      order: z.number().default(0),
+      draft: z.boolean().default(false),
+      facts: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+      // Lien YouTube, ou chemin d'une vidéo placée dans public/.
       video: z.string().optional(),
-      setup: z
-        .array(z.object({ src: image(), caption: z.string().optional(), alt: z.string().optional() }))
-        .default([]),
-      prints: z
-        .array(z.object({ src: image(), caption: z.string().optional(), alt: z.string().optional() }))
-        .default([]),
+      setup: z.array(media({ image })).default([]),
+      prints: z.array(media({ image })).default([]),
     }),
 });
 
-export const collections = { blog, series, initiations };
+// Autres projets listés sur l'accueil.
+const projects = defineCollection({
+  loader: file('./src/content/projects.yaml'),
+  schema: z.object({
+    name: z.string(),
+    hint: z.string(),
+    url: z.string().url(),
+    order: z.number().default(0),
+  }),
+});
+
+export const collections = { blog, series, pages, workshops, projects };

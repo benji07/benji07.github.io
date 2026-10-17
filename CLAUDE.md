@@ -5,6 +5,12 @@ Site perso statique (Astro 7), en français, déployé sur GitHub Pages par
 Geist Mono, un seul accent bleu (#2346d8) réservé aux liens. Pas de
 dégradé, pas de fond crème.
 
+## Où est le contenu
+
+Tout le texte est en markdown dans `src/content/` (voir le README) ; les
+pages de `src/pages/` ne contiennent que la mise en forme. Pour changer un
+texte, modifie le markdown, pas la page.
+
 ## Ajouter une série au portfolio
 
 C'est le cas le plus fréquent. Suis [docs/PORTFOLIO.md](docs/PORTFOLIO.md) :

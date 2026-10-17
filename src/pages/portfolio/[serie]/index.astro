@@ -25,10 +25,10 @@ const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' })
 ---
 
 <BaseLayout title={series.data.title} current="portfolio" ogImage={og.src}>
-  <main class="serie">
-    <aside class="text">
-      <a class="back mono" href="/portfolio/">← Toutes les séries</a>
-      <h1>{series.data.title}</h1>
+  <main class="split">
+    <aside class="split__aside text">
+      <a class="back" href="/portfolio/">← Toutes les séries</a>
+      <h1 class="title title--l">{series.data.title}</h1>
       <span class="label">{seriesMeta(series)}</span>
       <div class="prose"><Content /></div>
       {
@@ -40,50 +40,20 @@ const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' })
         )
       }
     </aside>
-    <div class="photos">
+    <div class="split__main">
       <PhotoRows series={series} />
     </div>
   </main>
 </BaseLayout>
 
 <style>
-  .serie {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 40px 56px;
-    align-items: flex-start;
-  }
-
   .text {
-    flex: 1 1 300px;
-    max-width: 360px;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
     position: sticky;
     top: 24px;
   }
 
-  .photos {
-    flex: 999 1 600px;
-    min-width: 0;
-  }
-
-  .back {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 48px;
-    font-weight: 600;
-    letter-spacing: -0.04em;
-    line-height: 1;
-  }
-
-  .prose {
+  .prose,
+  .siblings {
     border-top: 1px solid var(--line);
     padding-top: 20px;
   }
@@ -92,8 +62,6 @@ const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' })
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    border-top: 1px solid var(--line);
-    padding-top: 16px;
     font-size: 13px;
   }
 
@@ -104,15 +72,6 @@ const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' })
   @media (max-width: 960px) {
     .text {
       position: static;
-      max-width: none;
-    }
-
-    h1 {
-      font-size: 36px;
-    }
-
-    .siblings {
-      order: 3;
     }
   }
 </style>

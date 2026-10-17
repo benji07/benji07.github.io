@@ -2,12 +2,12 @@
 import { SITE } from '../lib/site';
 
 interface Props {
-  current?: 'home' | 'initiations' | 'portfolio' | 'blog';
+  current?: 'home' | 'workshop' | 'portfolio' | 'blog';
 }
 
 const { current } = Astro.props;
 const links = [
-  { href: '/initiations/', label: 'Initiations', key: 'initiations' },
+  { href: '/workshop/', label: 'Workshop', key: 'workshop' },
   { href: '/portfolio/', label: 'Portfolio', key: 'portfolio' },
 ];
 ---
@@ -16,13 +16,15 @@ const links = [
   {current === 'home' ? <span /> : <a class="home" href="/">{SITE.name}</a>}
   <nav aria-label="Navigation principale">
     {
-      links.map((link) =>
-        current === link.key ? (
-          <span aria-current="page">{link.label}</span>
-        ) : (
-          <a href={link.href}>{link.label}</a>
-        ),
-      )
+      links.map((link) => (
+        <a
+          href={link.href}
+          class:list={{ active: current === link.key }}
+          aria-current={Astro.url.pathname === link.href ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))
     }
     <a class:list={{ 'hide-mobile': current !== 'home' }} href={SITE.instagram}>Instagram ↗</a>
   </nav>
@@ -59,7 +61,7 @@ const links = [
     color: var(--muted);
   }
 
-  nav [aria-current] {
+  nav .active {
     color: var(--fg);
   }
 

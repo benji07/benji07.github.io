@@ -1,24 +1,26 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Cover from '../../components/Cover.astro';
+import { getPage } from '../../lib/content';
 import { getSeries, getCover, seriesMeta } from '../../lib/series';
 
+const page = await getPage('portfolio');
 const series = await getSeries();
 ---
 
-<BaseLayout title="Portfolio" current="portfolio" description="Mes séries de photos argentiques, en 135, 6×6 et Polaroid.">
+<BaseLayout title={page.title} description={page.description} current="portfolio">
   <main class="portfolio">
-    <h1>Portfolio</h1>
+    <h1 class="title">{page.title}</h1>
     {
       series.length === 0 ? (
-        <p class="prose empty">Les premières séries arrivent bientôt.</p>
+        <div class="prose"><page.Content /></div>
       ) : (
         <ul class="grid" role="list">
           {series.map((entry) => (
             <li>
               <a href={`/portfolio/${entry.id}/`}>
                 <Cover src={getCover(entry)} alt="" polaroid={entry.data.format === 'polaroid'} />
-                <span class="title">{entry.data.title}</span>
+                <span class="name">{entry.data.title}</span>
                 <span class="label">{seriesMeta(entry)}</span>
               </a>
             </li>
@@ -34,14 +36,6 @@ const series = await getSeries();
     display: flex;
     flex-direction: column;
     gap: 56px;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: clamp(48px, 7vw, 72px);
-    font-weight: 600;
-    letter-spacing: -0.045em;
-    line-height: 0.95;
   }
 
   .grid {
@@ -65,18 +59,14 @@ const series = await getSeries();
     margin-bottom: 8px;
   }
 
-  .grid a:hover .title {
+  .grid a:hover .name {
     text-decoration: underline;
   }
 
-  .title {
+  .name {
     font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.02em;
-  }
-
-  .empty {
-    margin: 0;
   }
 
   @media (max-width: 860px) {
@@ -85,13 +75,8 @@ const series = await getSeries();
       gap: 28px 12px;
     }
 
-    .title {
+    .name {
       font-size: 16px;
-    }
-
-    .label {
-      font-size: 11px;
-      letter-spacing: 0.04em;
     }
   }
 </style>
