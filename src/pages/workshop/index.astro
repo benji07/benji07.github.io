@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPage, getWorkshops } from '../../lib/content';
+
+const page = await getPage('workshop');
+const workshops = await getWorkshops();
+---
+
+<BaseLayout title={page.title} description={page.description} current="workshop">
+  <main class="split">
+    <div class="split__aside">
+      <h1 class="title">{page.title}</h1>
+      <div class="prose"><page.Content /></div>
+    </div>
+    <ul class="split__main link-list workshops" role="list">
+      {
+        workshops.map((workshop) => (
+          <li>
+            <a href={`/workshop/${workshop.id}/`}>
+              <span class="title title--s">{workshop.data.title} →</span>
+              <span class="prose">{workshop.data.summary}</span>
+              {workshop.data.infos && <span class="hint mono">{workshop.data.infos}</span>}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</BaseLayout>
+
+<style>
+  .workshops {
+    gap: 0;
+  }
+
+  .workshops a {
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px 0;
+  }
+
+  .workshops a:hover .title {
+    text-decoration: underline;
+  }
+</style>

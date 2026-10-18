@@ -1,0 +1,60 @@
+---
+import '@fontsource/geist/400.css';
+import '@fontsource/geist/500.css';
+import '@fontsource/geist/600.css';
+import '@fontsource/geist-mono/400.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import { SITE } from '../lib/site';
+import { getPage } from '../lib/content';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Page courante, pour marquer le lien actif de l'en-tête. */
+  current?: 'home' | 'workshop' | 'portfolio' | 'blog';
+  /** Image de partage (URL absolue ou chemin). */
+  ogImage?: string;
+}
+
+const home = await getPage('accueil');
+const { title, description = home.description, current, ogImage } = Astro.props;
+const fullTitle = title ? `${title} · ${SITE.name}` : SITE.name;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.name}, archives du blog`} href="/rss.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site)} />}
+    <meta name="p:domain_verify" content="9f58c8c36d4cda77dcc2c0a158f911cf" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <div class={`page ${current === 'home' ? 'page--narrow' : ''}`}>
+      <Header current={current} />
+      <slot />
+      <footer class="footer mono">© {new Date().getFullYear()} {SITE.name}</footer>
+    </div>
+  </body>
+</html>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>

@@ -1,0 +1,318 @@
+---
+import { getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../lib/site';
+import { getPage, getProjects, getWorkshops } from '../lib/content';
+import { getInstagramPosts } from '../lib/instagram';
+import { getSeries, getPhotos, photoAlt } from '../lib/series';
+import { getPosts } from '../lib/blog';
+
+const page = await getPage('accueil');
+const workshops = await getWorkshops();
+const projects = await getProjects();
+
+// Astro télécharge les images distantes en fin de build, et un échec y fait
+// tomber tout le build : on vérifie d'abord qu'elles répondent.
+async function reachable(url: string): Promise<boolean> {
+  try {
+    return (await fetch(url, { method: 'HEAD' })).ok;
+  } catch {
+    return false;
+  }
+}
+
+// Photo Gravatar téléchargée au build et servie depuis le site. Si Gravatar
+// est injoignable, on garde l'URL distante plutôt que de casser le build.
+let avatar = SITE.gravatar;
+if (await reachable(SITE.gravatar)) {
+  avatar = (await getImage({ src: SITE.gravatar, width: 240, height: 240, format: 'webp' })).src;
+} else {
+  console.warn('[gravatar] injoignable, image servie depuis gravatar.com');
+}
+
+// Vignettes : Instagram si le jeton est configuré, sinon les dernières
+// photos du portfolio, sinon rien (le bloc @benji07 reste affiché).
+const thumbs: { src: string; href: string; alt: string }[] = [];
+for (const post of await getInstagramPosts(6)) {
+  if (!(await reachable(post.image))) continue;
+  const image = await getImage({ src: post.image, inferSize: true, width: 360, height: 450, fit: 'cover', format: 'webp' });
+  thumbs.push({ src: image.src, href: post.permalink, alt: post.caption || 'Photo Instagram' });
+}
+const fromInstagram = thumbs.length > 0;
+if (!fromInstagram) {
+  for (const series of await getSeries()) {
+    for (const [index, photo] of getPhotos(series).entries()) {
+      if (thumbs.length >= 6) break;
+      const image = await getImage({ src: photo.src, width: 360, height: 450, fit: 'cover', format: 'webp' });
+      thumbs.push({ src: image.src, href: `/portfolio/${series.id}/${photo.slug}/`, alt: photoAlt(series, photo, index) });
+    }
+  }
+}
+
+const posts = await getPosts();
+const years = `${posts.at(-1)?.date.getUTCFullYear()}–${posts[0]?.date.getUTCFullYear()}`;
+---
+
+<BaseLayout current="home">
+  <main class="home">
+    <section class="intro">
+      <img class="avatar" src={avatar} width="120" height="120" alt={page.title} />
+      <h1 class="title">{page.title}</h1>
+      <div class="prose bio"><page.Content /></div>
+      <p class="links mono">
+        <a href="/portfolio/">Portfolio →</a>
+        <a href={SITE.github}>GitHub ↗</a>
+        <a href={SITE.linkedin}>LinkedIn ↗</a>
+      </p>
+    </section>
+
+    <section class="instagram section" aria-labelledby="instagram-title">
+      <div class="instagram-head">
+        <div class="instagram-title">
+          <span class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
+          <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
+        </div>
+        <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+      </div>
+      {
+        thumbs.length > 0 && (
+          <ul class="thumbs" role="list">
+            {thumbs.map((thumb) => (
+              <li>
+                <a href={thumb.href}>
+                  <img src={thumb.src} alt={thumb.alt} width="360" height="450" loading="lazy" decoding="async" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {!fromInstagram && thumbs.length > 0 && <a class="mono caption" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>}
+      <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+    </section>
+
+    <div class="workshops">
+      {
+        workshops.map((workshop) => (
+          <section class="section" aria-labelledby={`workshop-${workshop.id}`}>
+            <span class="label">Workshop</span>
+            <h2 id={`workshop-${workshop.id}`} class="title title--s">{workshop.data.title}</h2>
+            <p class="prose">{workshop.data.summary}</p>
+            {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
+            <div class="actions">
+              <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
+              <a class="mono caption" href={SITE.instagram}>Demander une date ↗</a>
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <section class="projects" aria-labelledby="projects-title">
+      <h2 id="projects-title" class="label">Projets</h2>
+      <ul class="link-list" role="list">
+        {
+          projects.map(({ data }) => (
+            <li>
+              <a href={data.url}>
+                <span>{data.name}</span>
+                <span class="hint">{data.hint} ↗</span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href="/blog/">
+            <span>Blog</span>
+            <span class="hint">archives {years} →</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  /* Desktop : présentation | Instagram, puis workshops | projets.
+     Mobile : une seule colonne dans cet ordre. */
+  .home {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas:
+      'intro insta'
+      'workshops projects';
+    gap: 56px 72px;
+    align-items: start;
+  }
+
+  .intro {
+    grid-area: intro;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .instagram {
+    grid-area: insta;
+  }
+
+  .workshops {
+    grid-area: workshops;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    max-width: 44ch;
+  }
+
+  .projects {
+    grid-area: projects;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--soft);
+  }
+
+  .bio {
+    font-size: 18px;
+    max-width: 40ch;
+  }
+
+  .links {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+    font-size: 14px;
+  }
+
+  .links a {
+    padding: 6px 0;
+  }
+
+  .instagram-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .instagram-title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .handle {
+    color: var(--fg);
+    font-size: clamp(40px, 5vw, 48px);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .thumbs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .thumbs img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: var(--soft);
+  }
+
+  .thumbs a:hover img {
+    opacity: 0.85;
+  }
+
+  .caption {
+    font-size: 13px;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .workshops .prose {
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+  }
+
+  .projects h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .projects ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+
+  .mobile-only {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    .home {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'intro' 'insta' 'workshops' 'projects';
+      gap: 40px;
+    }
+
+    .avatar {
+      align-self: center;
+    }
+
+    .workshops {
+      max-width: none;
+    }
+
+    .thumbs {
+      gap: 4px;
+    }
+
+    .projects ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mobile-only {
+      display: inline-flex;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+
+    .bio {
+      font-size: 17px;
+    }
+
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+  }
+</style>

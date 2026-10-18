@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Cover from '../../components/Cover.astro';
+import { getPage } from '../../lib/content';
+import { getSeries, getCover, seriesMeta } from '../../lib/series';
+
+const page = await getPage('portfolio');
+const series = await getSeries();
+---
+
+<BaseLayout title={page.title} description={page.description} current="portfolio">
+  <main class="portfolio">
+    <h1 class="title">{page.title}</h1>
+    {
+      series.length === 0 ? (
+        <div class="prose"><page.Content /></div>
+      ) : (
+        <ul class="grid" role="list">
+          {series.map((entry) => (
+            <li>
+              <a href={`/portfolio/${entry.id}/`}>
+                <Cover src={getCover(entry)} alt="" polaroid={entry.data.format === 'polaroid'} />
+                <span class="name">{entry.data.title}</span>
+                <span class="label">{seriesMeta(entry)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .portfolio {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 48px 32px;
+  }
+
+  .grid a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .grid a :global(.cover) {
+    margin-bottom: 8px;
+  }
+
+  .grid a:hover .name {
+    text-decoration: underline;
+  }
+
+  .name {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  @media (max-width: 860px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px 12px;
+    }
+
+    .name {
+      font-size: 16px;
+    }
+  }
+</style>
