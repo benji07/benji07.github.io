@@ -29,7 +29,9 @@ export function getInstagramPosts(limit = 6): Promise<InstagramPost[]> {
 }
 
 async function fetchPosts(limit: number): Promise<InstagramPost[]> {
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN;
+  // En dev, Astro charge le .env dans import.meta.env seulement ; au build
+  // et en CI (secret GitHub), le jeton arrive par process.env.
+  const token = import.meta.env.INSTAGRAM_ACCESS_TOKEN ?? process.env.INSTAGRAM_ACCESS_TOKEN;
   if (!token) return [];
 
   const url = new URL('https://graph.instagram.com/me/media');
