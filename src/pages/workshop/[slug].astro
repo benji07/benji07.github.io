@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { workshop } = Astro.props;
-const { title, summary, facts, video, setup, prints } = workshop.data;
+const { title, summary, facts, booking, video, setup, prints } = workshop.data;
 const { Content } = await render(workshop);
 const youtube = video ? youtubeId(video) : undefined;
 const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
@@ -39,7 +39,13 @@ const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
           </dl>
         )
       }
-      <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+      {
+        booking ? (
+          <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
+        ) : (
+          <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+        )
+      }
     </div>
 
     {

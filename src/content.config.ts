@@ -83,6 +83,8 @@ const workshops = defineCollection({
       order: z.number().default(0),
       draft: z.boolean().default(false),
       facts: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+      // Lien de réservation (cal.com…). Sans lien, le bouton renvoie vers Instagram.
+      booking: z.string().url().optional(),
       // Lien YouTube, ou chemin d'une vidéo placée dans public/.
       video: z.string().optional(),
       setup: z.array(media({ image })).default([]),

@@ -101,7 +101,9 @@ const years = `${posts.at(-1)?.date.getUTCFullYear()}–${posts[0]?.date.getUTCF
             {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
             <div class="actions">
               <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
-              <a class="mono caption" href={SITE.instagram}>Demander une date ↗</a>
+              <a class="mono caption" href={workshop.data.booking ?? SITE.instagram}>
+                {workshop.data.booking ? 'Réserver une date ↗' : 'Demander une date ↗'}
+              </a>
             </div>
           </section>
         ))

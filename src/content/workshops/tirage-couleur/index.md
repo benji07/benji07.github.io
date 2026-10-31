@@ -4,6 +4,8 @@ title: "Apprendre le tirage couleur"
 summary: "J'organise des initiations au tirage argentique couleur dans ma chambre noire. Tu repars avec tes propres tirages, faits à partir de tes négatifs."
 # Ligne d'infos pratiques affichée sous le résumé.
 infos: "Le week-end, l'après-midi · 2 personnes max · Prix libre"
+# Lien de réservation ; sans lien, le bouton renvoie vers Instagram.
+booking: "https://cal.com/benji07/initiation-tirage-ra-4"
 # Ordre d'affichage (le plus petit d'abord).
 order: 1
 facts:
