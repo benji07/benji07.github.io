@@ -25,9 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Build avec Astro
-        # withastro/action installe les dépendances (Node 24 par défaut),
-        # lance `astro build` et téléverse l'artefact Pages depuis ./dist.
+        # withastro/action installe les dépendances, lance `astro build` et
+        # téléverse l'artefact Pages depuis ./dist. Node aligné sur .nvmrc.
         uses: withastro/action@v6
+        with:
+          node-version: 26
         env:
           # Facultatif : sans jeton, l'accueil affiche les dernières photos du portfolio.
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
