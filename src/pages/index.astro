@@ -5,7 +5,6 @@ import { SITE } from '../lib/site';
 import { getPage, getProjects, getWorkshops } from '../lib/content';
 import { getInstagramPosts } from '../lib/instagram';
 import { getSeries, getPhotos, photoAlt } from '../lib/series';
-import { getPosts } from '../lib/blog';
 
 const page = await getPage('accueil');
 const workshops = await getWorkshops();
@@ -49,8 +48,6 @@ if (!fromInstagram) {
   }
 }
 
-const posts = await getPosts();
-const years = `${posts.at(-1)?.date.getUTCFullYear()}–${posts[0]?.date.getUTCFullYear()}`;
 ---
 
 <BaseLayout current="home">
@@ -110,27 +107,23 @@ const years = `${posts.at(-1)?.date.getUTCFullYear()}–${posts[0]?.date.getUTCF
       }
     </div>
 
-    <section class="projects" aria-labelledby="projects-title">
-      <h2 id="projects-title" class="label">Projets</h2>
-      <ul class="link-list" role="list">
-        {
-          projects.map(({ data }) => (
-            <li>
-              <a href={data.url}>
-                <span>{data.name}</span>
-                <span class="hint">{data.hint} ↗</span>
-              </a>
-            </li>
-          ))
-        }
-        <li>
-          <a href="/blog/">
-            <span>Blog</span>
-            <span class="hint">archives {years} →</span>
-          </a>
-        </li>
-      </ul>
-    </section>
+    {
+      projects.length > 0 && (
+        <section class="projects" aria-labelledby="projects-title">
+          <h2 id="projects-title" class="label">Projets</h2>
+          <ul class="link-list" role="list">
+            {projects.map(({ data }) => (
+              <li>
+                <a href={data.url}>
+                  <span>{data.name}</span>
+                  <span class="hint">{data.hint} ↗</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
   </main>
 </BaseLayout>
 

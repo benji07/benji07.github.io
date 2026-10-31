@@ -45,16 +45,27 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <div class={`page ${current === 'home' ? 'page--narrow' : ''}`}>
       <Header current={current} />
       <slot />
-      <footer class="footer mono">© {new Date().getFullYear()} {SITE.name}</footer>
+      <footer class="footer mono">
+        <span>© {new Date().getFullYear()} {SITE.name}</span>
+        <a href="/blog/">Archives du blog</a>
+      </footer>
     </div>
   </body>
 </html>
 
 <style>
   .footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
     border-top: 1px solid var(--line);
     padding-top: 18px;
     font-size: 12px;
+    color: var(--muted);
+  }
+
+  .footer a {
     color: var(--muted);
   }
 </style>

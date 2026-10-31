@@ -1,26 +1,28 @@
 # Autres projets, affichés en liste sur l'accueil, triés par `order`.
-- id: film-vault
-  order: 1
-  name: "My Film Vault"
-  hint: "pellicules"
-  url: "https://benjamin.leveque.me/film-vault/"
-- id: food
-  order: 2
-  name: "benji07's food"
-  hint: "recettes"
-  url: "https://benjamin.leveque.me/food/"
-- id: photo-explore
-  order: 3
-  name: "Photo·Explore"
-  hint: "culture photo"
-  url: "https://benjamin.leveque.me/photo-explore/"
-- id: cadre
-  order: 4
-  name: "Cadre"
-  hint: "app macOS"
-  url: "https://github.com/benji07/cadre-app"
-- id: ra4-print-flasher
-  order: 5
-  name: "RA-4 Print Flasher"
-  hint: "Arduino"
-  url: "https://github.com/benji07/ra4-print-flasher"
+# Liste vide : le bloc « Projets » est masqué. Décommente les entrées à garder.
+[]
+# - id: film-vault
+#   order: 1
+#   name: "My Film Vault"
+#   hint: "pellicules"
+#   url: "https://benjamin.leveque.me/film-vault/"
+# - id: food
+#   order: 2
+#   name: "benji07's food"
+#   hint: "recettes"
+#   url: "https://benjamin.leveque.me/food/"
+# - id: photo-explore
+#   order: 3
+#   name: "Photo·Explore"
+#   hint: "culture photo"
+#   url: "https://benjamin.leveque.me/photo-explore/"
+# - id: cadre
+#   order: 4
+#   name: "Cadre"
+#   hint: "app macOS"
+#   url: "https://github.com/benji07/cadre-app"
+# - id: ra4-print-flasher
+#   order: 5
+#   name: "RA-4 Print Flasher"
+#   hint: "Arduino"
+#   url: "https://github.com/benji07/ra4-print-flasher"
