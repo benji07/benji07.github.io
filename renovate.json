@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 6am on monday"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Mises à jour mineures et correctifs npm regroupées en une seule PR",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dépendances npm (mineures)"
+    },
+    {
+      "description": "Actions GitHub regroupées",
+      "matchManagers": ["github-actions"],
+      "groupName": "actions GitHub"
+    }
+  ]
+}
