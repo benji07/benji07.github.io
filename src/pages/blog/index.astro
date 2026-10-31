@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPage } from '../../lib/content';
+import { getPosts, formatDate } from '../../lib/blog';
+
+const page = await getPage('blog');
+const posts = await getPosts();
+const years = Map.groupBy(posts, (post) => post.date.getUTCFullYear());
+---
+
+<BaseLayout title={page.title} description={page.description} current="blog">
+  <main class="blog">
+    <h1 class="title">{page.title}</h1>
+    <div class="prose"><page.Content /></div>
+    {
+      [...years].map(([year, items]) => (
+        <section aria-labelledby={`y${year}`}>
+          <h2 id={`y${year}`} class="label">{year}</h2>
+          <ul class="link-list" role="list">
+            {items.map((post) => (
+              <li>
+                <a href={`/blog/${post.slug}/`}>
+                  <span>{post.data.title}</span>
+                  <time class="hint mono" datetime={post.date.toISOString().slice(0, 10)}>{formatDate(post.date)}</time>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .blog {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 820px;
+  }
+
+  .prose {
+    max-width: 60ch;
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .link-list a:hover span {
+    text-decoration: underline;
+  }
+
+  time {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+</style>

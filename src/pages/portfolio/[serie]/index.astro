@@ -1,0 +1,77 @@
+---
+import { render } from 'astro:content';
+import { getImage } from 'astro:assets';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PhotoRows from '../../../components/PhotoRows.astro';
+import { getSeries, getCover, seriesMeta, type Series } from '../../../lib/series';
+
+export async function getStaticPaths() {
+  const all = await getSeries();
+  return all.map((series, index) => ({
+    params: { serie: series.id },
+    props: { series, previous: all[index + 1], next: all[index - 1] },
+  }));
+}
+
+interface Props {
+  series: Series;
+  previous?: Series;
+  next?: Series;
+}
+
+const { series, previous, next } = Astro.props;
+const { Content } = await render(series);
+const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' });
+---
+
+<BaseLayout title={series.data.title} current="portfolio" ogImage={og.src}>
+  <main class="split">
+    <aside class="split__aside text">
+      <a class="back" href="/portfolio/">← Toutes les séries</a>
+      <h1 class="title title--l">{series.data.title}</h1>
+      <span class="label">{seriesMeta(series)}</span>
+      <div class="prose"><Content /></div>
+      {
+        (previous || next) && (
+          <nav class="siblings mono" aria-label="Autres séries">
+            {previous ? <a href={`/portfolio/${previous.id}/`}>← Série précédente</a> : <span />}
+            {next && <a href={`/portfolio/${next.id}/`}>Suivante →</a>}
+          </nav>
+        )
+      }
+    </aside>
+    <div class="split__main">
+      <PhotoRows series={series} />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .text {
+    position: sticky;
+    top: 24px;
+  }
+
+  .prose,
+  .siblings {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+  }
+
+  .siblings {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .siblings a {
+    color: var(--muted);
+  }
+
+  @media (max-width: 960px) {
+    .text {
+      position: static;
+    }
+  }
+</style>

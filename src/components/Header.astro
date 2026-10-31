@@ -1,0 +1,78 @@
+---
+import { SITE } from '../lib/site';
+
+interface Props {
+  current?: 'home' | 'workshop' | 'portfolio' | 'blog';
+}
+
+const { current } = Astro.props;
+const links = [
+  { href: '/portfolio/', label: 'Portfolio', key: 'portfolio' },
+  { href: '/workshop/', label: 'Workshop', key: 'workshop' },
+];
+---
+
+<header class="header mono">
+  {current === 'home' ? <span /> : <a class="home" href="/">{SITE.name}</a>}
+  <nav aria-label="Navigation principale">
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          class:list={{ active: current === link.key }}
+          aria-current={Astro.url.pathname === link.href ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+    <a class:list={{ 'hide-mobile': current !== 'home' }} href={SITE.instagram}>Instagram ↗</a>
+  </nav>
+</header>
+
+<style>
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .home {
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+  }
+
+  nav a,
+  nav span {
+    padding: 12px 0;
+    color: var(--muted);
+  }
+
+  nav .active {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    nav {
+      gap: 0 16px;
+    }
+
+    /* Sur les pages internes, le nom + 3 liens ne tiennent pas sur une ligne. */
+    .hide-mobile {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPage } from '../lib/content';
+
+const page = await getPage('404');
+---
+
+<BaseLayout title={page.title}>
+  <main class="not-found">
+    <h1 class="title title--l">{page.title}</h1>
+    <div class="prose"><page.Content /></div>
+  </main>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+</style>

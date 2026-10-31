@@ -1,0 +1,111 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPosts, formatDate, type Post } from '../../lib/blog';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={post.data.title} current="blog">
+  <main class="post">
+    <a class="back" href="/blog/">← Archives du blog</a>
+    <header>
+      <h1 class="title title--m">{post.data.title}</h1>
+      <time class="label" datetime={post.date.toISOString().slice(0, 10)}>{formatDate(post.date)}</time>
+    </header>
+    <p class="notice">Article publié en {post.date.getUTCFullYear()} et conservé en l'état : son contenu est probablement dépassé.</p>
+    <article class="content">
+      <Content />
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .post {
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notice {
+    margin: 0;
+    padding: 12px 16px;
+    background: var(--soft);
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .content {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--text);
+    min-width: 0;
+  }
+
+  .content :global(h2),
+  .content :global(h3),
+  .content :global(h4) {
+    color: var(--fg);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin: 32px 0 12px;
+  }
+
+  .content :global(pre) {
+    overflow-x: auto;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid var(--line);
+  }
+
+  .content :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+  }
+
+  .content :global(:not(pre) > code) {
+    background: var(--soft);
+    padding: 1px 4px;
+  }
+
+  .content :global(blockquote) {
+    margin: 16px 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--line);
+  }
+
+  .content :global(img) {
+    margin: 16px auto;
+  }
+
+  .content :global(table) {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .content :global(th),
+  .content :global(td) {
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+  }
+</style>

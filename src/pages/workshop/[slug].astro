@@ -1,0 +1,201 @@
+---
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SITE } from '../../lib/site';
+import { getWorkshops, youtubeId, type Workshop } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const workshops = await getWorkshops();
+  return workshops.map((workshop) => ({ params: { slug: workshop.id }, props: { workshop } }));
+}
+
+interface Props {
+  workshop: Workshop;
+}
+
+const { workshop } = Astro.props;
+const { title, summary, booking, video, setup, prints } = workshop.data;
+const { Content } = await render(workshop);
+const youtube = video ? youtubeId(video) : undefined;
+const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
+---
+
+<BaseLayout title={title} description={summary} current="workshop">
+  <main class="split">
+    <div class:list={['split__aside', { alone: !hasMedia }]}>
+      <a class="back" href="/workshop/">← Workshop</a>
+      <h1 class="title title--l">{title}</h1>
+      <div class="prose"><Content /></div>
+      {
+        booking ? (
+          <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
+        ) : (
+          <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+        )
+      }
+    </div>
+
+    {
+      hasMedia && (
+        <div class="split__main">
+          {video && (
+            <section>
+              <h2 class="label">Comment ça se passe</h2>
+              {youtube ? (
+                <iframe
+                  class="video"
+                  src={`https://www.youtube-nocookie.com/embed/${youtube}`}
+                  title={title}
+                  loading="lazy"
+                  allow="encrypted-media; picture-in-picture"
+                  allowfullscreen
+                />
+              ) : (
+                <video class="video" src={video} controls preload="metadata" />
+              )}
+            </section>
+          )}
+
+          {setup.length > 0 && (
+            <section>
+              <h2 class="label">Le setup</h2>
+              <ul class="setup" role="list">
+                {setup.map((item) => (
+                  <li>
+                    <figure>
+                      <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 640px) 50vw, 25vw" />
+                      {item.caption && <figcaption>{item.caption}</figcaption>}
+                    </figure>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {prints.length > 0 && (
+            <section>
+              <h2 class="label">Tirages faits pendant le workshop</h2>
+              <ul class="prints" role="list">
+                {prints.map((item) => (
+                  <li style={`--ratio: ${(item.src.width / item.src.height).toFixed(4)}`}>
+                    <figure>
+                      <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
+                      {item.caption && <figcaption>{item.caption}</figcaption>}
+                    </figure>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .alone {
+    max-width: 560px;
+  }
+
+  .cta {
+    align-self: flex-start;
+  }
+
+  /* Infos pratiques : l'emoji en début de ligne tient lieu de puce. */
+  .prose :global(ul) {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+  }
+
+  .prose :global(li) {
+    margin: 0 0 6px;
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: var(--soft);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  figcaption {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .setup {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .setup img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  /* Tirages en lignes justifiées, chacun dans son format. */
+  .prints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .prints::after {
+    content: '';
+    flex-grow: 999;
+  }
+
+  .prints li {
+    flex: var(--ratio) 1 calc(var(--ratio) * 280px);
+    min-width: 0;
+  }
+
+  .prints img {
+    width: 100%;
+    aspect-ratio: var(--ratio);
+  }
+
+  @media (max-width: 640px) {
+    .cta {
+      align-self: stretch;
+    }
+
+    .setup {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .prints li {
+      flex-basis: calc(var(--ratio) * 150px);
+    }
+  }
+</style>
