@@ -4,5 +4,5 @@ export const SITE = {
   instagramHandle: '@benji07',
   github: 'https://github.com/benji07',
   linkedin: 'https://www.linkedin.com/in/benjaminleveque/',
-  gravatar: 'https://gravatar.com/avatar/b9fe4a1c9e1780bd885841019153e036?s=480',
+  gravatar: 'https://gravatar.com/avatar/b9fe4a1c9e1780bd885841019153e036?s=1024',
 };

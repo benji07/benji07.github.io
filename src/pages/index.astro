@@ -24,7 +24,7 @@ async function reachable(url: string): Promise<boolean> {
 // est injoignable, on garde l'URL distante plutôt que de casser le build.
 let avatar = SITE.gravatar;
 if (await reachable(SITE.gravatar)) {
-  avatar = (await getImage({ src: SITE.gravatar, width: 240, height: 240, format: 'webp' })).src;
+  avatar = (await getImage({ src: SITE.gravatar, width: 720, height: 720, format: 'webp' })).src;
 } else {
   console.warn('[gravatar] injoignable, image servie depuis gravatar.com');
 }
@@ -53,7 +53,7 @@ if (!fromInstagram) {
 <BaseLayout current="home">
   <main class="home">
     <section class="intro">
-      <img class="avatar" src={avatar} width="120" height="120" alt={page.title} />
+      <img class="avatar" src={avatar} width="720" height="720" alt={page.title} />
       <h1 class="title">{page.title}</h1>
       <div class="prose bio"><page.Content /></div>
       <p class="links mono">
@@ -167,8 +167,9 @@ if (!fromInstagram) {
   }
 
   .avatar {
-    width: 120px;
-    height: 120px;
+    width: min(100%, 300px);
+    height: auto;
+    aspect-ratio: 1;
     object-fit: cover;
     background: var(--soft);
   }
@@ -273,10 +274,6 @@ if (!fromInstagram) {
       gap: 40px;
     }
 
-    .avatar {
-      align-self: center;
-    }
-
     .workshops {
       max-width: none;
     }
@@ -291,6 +288,10 @@ if (!fromInstagram) {
   }
 
   @media (max-width: 640px) {
+    .avatar {
+      width: 100%;
+    }
+
     .mobile-only {
       display: inline-flex;
     }
