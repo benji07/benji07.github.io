@@ -63,104 +63,101 @@ if (!fromInstagram) {
       </p>
     </section>
 
-    <section class="instagram section" aria-labelledby="instagram-title">
-      <div class="instagram-head">
-        <div class="instagram-title">
-          <span class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
-          <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
+    <div class="side">
+      <section class="instagram section" aria-labelledby="instagram-title">
+        <div class="instagram-head">
+          <div class="instagram-title">
+            <span class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
+            <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
+          </div>
+          <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
         </div>
-        <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
-      </div>
-      {
-        thumbs.length > 0 && (
-          <ul class="thumbs" role="list">
-            {thumbs.map((thumb) => (
-              <li>
-                <a href={thumb.href}>
-                  <img src={thumb.src} alt={thumb.alt} width="360" height="450" loading="lazy" decoding="async" />
+        {
+          thumbs.length > 0 && (
+            <ul class="thumbs" role="list">
+              {thumbs.map((thumb) => (
+                <li>
+                  <a href={thumb.href}>
+                    <img src={thumb.src} alt={thumb.alt} width="360" height="450" loading="lazy" decoding="async" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        {!fromInstagram && thumbs.length > 0 && <a class="mono caption" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>}
+        <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+      </section>
+
+      <div class="workshops">
+        {
+          workshops.map((workshop) => (
+            <section class="section" aria-labelledby={`workshop-${workshop.id}`}>
+              <span class="label">Workshop</span>
+              <h2 id={`workshop-${workshop.id}`} class="title title--s">{workshop.data.title}</h2>
+              <p class="prose">{workshop.data.summary}</p>
+              {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
+              <div class="actions">
+                <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
+                <a class="mono caption" href={workshop.data.booking ?? SITE.instagram}>
+                  {workshop.data.booking ? 'Réserver une date ↗' : 'Demander une date ↗'}
                 </a>
-              </li>
-            ))}
-          </ul>
+              </div>
+            </section>
+          ))
+        }
+      </div>
+
+      {
+        projects.length > 0 && (
+          <section class="projects" aria-labelledby="projects-title">
+            <h2 id="projects-title" class="label">Projets</h2>
+            <ul class="link-list" role="list">
+              {projects.map(({ data }) => (
+                <li>
+                  <a href={data.url}>
+                    <span>{data.name}</span>
+                    <span class="hint">{data.hint} ↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
         )
       }
-      {!fromInstagram && thumbs.length > 0 && <a class="mono caption" href="/portfolio/">Ci-dessus : les dernières photos du portfolio →</a>}
-      <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
-    </section>
-
-    <div class="workshops">
-      {
-        workshops.map((workshop) => (
-          <section class="section" aria-labelledby={`workshop-${workshop.id}`}>
-            <span class="label">Workshop</span>
-            <h2 id={`workshop-${workshop.id}`} class="title title--s">{workshop.data.title}</h2>
-            <p class="prose">{workshop.data.summary}</p>
-            {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
-            <div class="actions">
-              <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
-              <a class="mono caption" href={workshop.data.booking ?? SITE.instagram}>
-                {workshop.data.booking ? 'Réserver une date ↗' : 'Demander une date ↗'}
-              </a>
-            </div>
-          </section>
-        ))
-      }
     </div>
-
-    {
-      projects.length > 0 && (
-        <section class="projects" aria-labelledby="projects-title">
-          <h2 id="projects-title" class="label">Projets</h2>
-          <ul class="link-list" role="list">
-            {projects.map(({ data }) => (
-              <li>
-                <a href={data.url}>
-                  <span>{data.name}</span>
-                  <span class="hint">{data.hint} ↗</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )
-    }
   </main>
 </BaseLayout>
 
 <style>
-  /* Desktop : présentation | Instagram, puis workshops | projets.
-     Mobile : une seule colonne dans cet ordre. */
+  /* Desktop : présentation à gauche ; Instagram, workshops et projets
+     empilés à droite. Mobile : une seule colonne dans cet ordre. */
   .home {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    grid-template-areas:
-      'intro insta'
-      'workshops projects';
     gap: 56px 72px;
     align-items: start;
   }
 
   .intro {
-    grid-area: intro;
     display: flex;
     flex-direction: column;
     gap: 24px;
   }
 
-  .instagram {
-    grid-area: insta;
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
   }
 
   .workshops {
-    grid-area: workshops;
     display: flex;
     flex-direction: column;
     gap: 40px;
-    max-width: 44ch;
   }
 
   .projects {
-    grid-area: projects;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -270,12 +267,11 @@ if (!fromInstagram) {
   @media (max-width: 860px) {
     .home {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'intro' 'insta' 'workshops' 'projects';
       gap: 40px;
     }
 
-    .workshops {
-      max-width: none;
+    .side {
+      gap: 40px;
     }
 
     .thumbs {
