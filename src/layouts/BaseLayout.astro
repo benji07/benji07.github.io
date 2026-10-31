@@ -46,7 +46,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <Header current={current} />
       <slot />
       <footer class="footer mono">
-        <span>© {new Date().getFullYear()} {SITE.name}</span>
+        <span>© {new Date().getFullYear()}</span>
         <a href="/blog/">Archives du blog</a>
       </footer>
     </div>
