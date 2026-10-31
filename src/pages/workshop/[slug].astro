@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { workshop } = Astro.props;
-const { title, summary, facts, booking, video, setup, prints } = workshop.data;
+const { title, summary, booking, video, setup, prints } = workshop.data;
 const { Content } = await render(workshop);
 const youtube = video ? youtubeId(video) : undefined;
 const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
@@ -27,18 +27,6 @@ const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
       <a class="back" href="/workshop/">← Workshop</a>
       <h1 class="title title--l">{title}</h1>
       <div class="prose"><Content /></div>
-      {
-        facts.length > 0 && (
-          <dl class="facts">
-            {facts.map((fact) => (
-              <>
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </>
-            ))}
-          </dl>
-        )
-      }
       {
         booking ? (
           <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
@@ -113,6 +101,17 @@ const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
 
   .cta {
     align-self: flex-start;
+  }
+
+  /* Infos pratiques : l'emoji en début de ligne tient lieu de puce. */
+  .prose :global(ul) {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+  }
+
+  .prose :global(li) {
+    margin: 0 0 6px;
   }
 
   section {
