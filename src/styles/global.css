@@ -69,10 +69,6 @@ h3 {
   gap: 56px;
 }
 
-.page--narrow {
-  max-width: 1120px;
-}
-
 .label {
   font-family: var(--font-mono);
   font-size: 12px;

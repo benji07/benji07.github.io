@@ -44,7 +44,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>
-    <div class={`page ${current === 'home' ? 'page--narrow' : ''}`}>
+    <div class="page">
       <Header current={current} />
       <slot />
       <footer class="footer mono">
