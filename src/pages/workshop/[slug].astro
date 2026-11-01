@@ -19,12 +19,14 @@ const { title, summary, booking, video, setup, prints } = workshop.data;
 const { Content } = await render(workshop);
 const youtube = video ? youtubeId(video) : undefined;
 const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
+// Avec un seul workshop, /workshop/ redirige ici : pas de lien retour.
+const hasList = (await getWorkshops()).length > 1;
 ---
 
 <BaseLayout title={title} description={summary} current="workshop">
   <main class="split">
     <div class:list={['split__aside', { alone: !hasMedia }]}>
-      <a class="back" href="/workshop/">← Workshop</a>
+      {hasList && <a class="back" href="/workshop/">← Workshop</a>}
       <h1 class="title title--l">{title}</h1>
       <div class="prose"><Content /></div>
       {
@@ -97,6 +99,14 @@ const hasMedia = Boolean(video) || setup.length > 0 || prints.length > 0;
 <style>
   .alone {
     max-width: 560px;
+  }
+
+  /* Texte plus long que sur une série : colonne de gauche plus large. */
+  @media (min-width: 961px) {
+    .split__aside:not(.alone) {
+      flex-basis: 420px;
+      max-width: 440px;
+    }
   }
 
   .cta {
