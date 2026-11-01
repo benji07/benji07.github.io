@@ -19,7 +19,13 @@ order: 1
 # prints:                                                 # tirages faits pendant le workshop
 #   - src: ./tirage-01.jpg
 #     caption: "Portra 400, 18×24"
-setup: []
+setup:
+  - src: ./setup-agrandisseur.jpg
+    caption: "L'agrandisseur, un Durst M605 Color"
+  - src: ./setup-chimie.jpg
+    caption: "La chimie et de quoi la chauffer"
+  - src: ./setup-jobo.jpg
+    caption: "La Jobo et la Durst Comot"
 prints: []
 ---
 

@@ -1,14 +1,17 @@
 ---
 import { SITE } from '../lib/site';
+import { getWorkshops } from '../lib/content';
 
 interface Props {
   current?: 'home' | 'workshop' | 'portfolio' | 'blog';
 }
 
 const { current } = Astro.props;
+// Un seul workshop : le menu pointe directement sur sa page.
+const workshops = await getWorkshops();
 const links = [
   { href: '/portfolio/', label: 'Portfolio', key: 'portfolio' },
-  { href: '/workshop/', label: 'Workshop', key: 'workshop' },
+  { href: workshops.length === 1 ? `/workshop/${workshops[0].id}/` : '/workshop/', label: 'Workshop', key: 'workshop' },
 ];
 ---
 

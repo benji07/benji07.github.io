@@ -4,6 +4,11 @@ import { getPage, getWorkshops } from '../../lib/content';
 
 const page = await getPage('workshop');
 const workshops = await getWorkshops();
+
+// Un seul workshop : pas besoin de liste, on va directement sur sa page.
+if (workshops.length === 1) {
+  return Astro.redirect(`/workshop/${workshops[0].id}/`);
+}
 ---
 
 <BaseLayout title={page.title} description={page.description} current="workshop">
