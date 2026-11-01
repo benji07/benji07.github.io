@@ -3,6 +3,10 @@
 Une série = **un dossier** dans `src/content/series/`. Le nom du dossier
 devient l'URL : `src/content/series/lyon-la-nuit/` → `/portfolio/lyon-la-nuit/`.
 
+Avec Claude Code, `/nouvelle-serie <dossier>` fait tout ça à partir d'un
+dossier de photos : il copie et numérote les images, pose les questions sur
+la série et écrit l'`index.md` (voir `.claude/skills/nouvelle-serie/`).
+
 ```
 src/content/series/lyon-la-nuit/
 ├── index.md      ← titre, métadonnées, liste des photos, texte de présentation
