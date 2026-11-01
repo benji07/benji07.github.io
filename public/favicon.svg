@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    g { fill: #111214; }
+    @media (prefers-color-scheme: dark) { g { fill: #ffffff; } }
+  </style>
+  <mask id="perfs">
+    <rect width="32" height="32" fill="#fff"/>
+    <rect x="22" y="12.6" width="2" height="1.6" fill="#000"/>
+    <rect x="22" y="19" width="2" height="1.6" fill="#000"/>
+    <rect x="26" y="19" width="2" height="1.6" fill="#000"/>
+  </mask>
+  <g mask="url(#perfs)">
+    <rect x="10" y="2.5" width="6" height="3" rx="0.5"/>
+    <rect x="5" y="5.5" width="16" height="3" rx="1"/>
+    <rect x="6" y="8" width="14" height="17"/>
+    <rect x="5" y="24.5" width="16" height="3" rx="1"/>
+    <path d="M20 11 H25 L30 16 V22 H20 Z"/>
+  </g>
+</svg>

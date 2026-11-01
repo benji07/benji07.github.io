@@ -24,79 +24,96 @@ const hasList = (await getWorkshops()).length > 1;
 ---
 
 <BaseLayout title={title} description={summary} current="workshop">
-  <main class="split">
-    <div class:list={['split__aside', { alone: !hasMedia }]}>
+  <main class="workshop">
+    <header class="head">
       {hasList && <a class="back" href="/workshop/">← Workshop</a>}
       <h1 class="title title--l">{title}</h1>
-      <div class="prose"><Content /></div>
+    </header>
+
+    <div class="split">
+      <div class:list={['split__aside', { alone: !hasMedia }]}>
+        <div class="prose"><Content /></div>
+        {
+          booking ? (
+            <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
+          ) : (
+            <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+          )
+        }
+      </div>
+
       {
-        booking ? (
-          <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
-        ) : (
-          <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+        hasMedia && (
+          <div class="split__main">
+            {video && (
+              <section>
+                <h2 class="label">Comment ça se passe</h2>
+                {youtube ? (
+                  <iframe
+                    class="video"
+                    src={`https://www.youtube-nocookie.com/embed/${youtube}`}
+                    title={title}
+                    loading="lazy"
+                    allow="encrypted-media; picture-in-picture"
+                    allowfullscreen
+                  />
+                ) : (
+                  <video class="video" src={video} controls preload="metadata" />
+                )}
+              </section>
+            )}
+
+            {setup.length > 0 && (
+              <section>
+                <h2 class="label">Le setup</h2>
+                <ul class="setup" role="list">
+                  {setup.map((item) => (
+                    <li>
+                      <figure>
+                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 640px) 50vw, 25vw" />
+                        {item.caption && <figcaption>{item.caption}</figcaption>}
+                      </figure>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {prints.length > 0 && (
+              <section>
+                <h2 class="label">Tirages faits pendant le workshop</h2>
+                <ul class="prints" role="list">
+                  {prints.map((item) => (
+                    <li style={`--ratio: ${(item.src.width / item.src.height).toFixed(4)}`}>
+                      <figure>
+                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
+                        {item.caption && <figcaption>{item.caption}</figcaption>}
+                      </figure>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
         )
       }
     </div>
-
-    {
-      hasMedia && (
-        <div class="split__main">
-          {video && (
-            <section>
-              <h2 class="label">Comment ça se passe</h2>
-              {youtube ? (
-                <iframe
-                  class="video"
-                  src={`https://www.youtube-nocookie.com/embed/${youtube}`}
-                  title={title}
-                  loading="lazy"
-                  allow="encrypted-media; picture-in-picture"
-                  allowfullscreen
-                />
-              ) : (
-                <video class="video" src={video} controls preload="metadata" />
-              )}
-            </section>
-          )}
-
-          {setup.length > 0 && (
-            <section>
-              <h2 class="label">Le setup</h2>
-              <ul class="setup" role="list">
-                {setup.map((item) => (
-                  <li>
-                    <figure>
-                      <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 640px) 50vw, 25vw" />
-                      {item.caption && <figcaption>{item.caption}</figcaption>}
-                    </figure>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {prints.length > 0 && (
-            <section>
-              <h2 class="label">Tirages faits pendant le workshop</h2>
-              <ul class="prints" role="list">
-                {prints.map((item) => (
-                  <li style={`--ratio: ${(item.src.width / item.src.height).toFixed(4)}`}>
-                    <figure>
-                      <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
-                      {item.caption && <figcaption>{item.caption}</figcaption>}
-                    </figure>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
-      )
-    }
   </main>
 </BaseLayout>
 
 <style>
+  .workshop {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
   .alone {
     max-width: 560px;
   }
