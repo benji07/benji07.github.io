@@ -26,6 +26,8 @@ setup:
     caption: "La chimie et de quoi la chauffer"
   - src: ./setup-jobo.jpg
     caption: "La Jobo et la Durst Comot"
+  - src: ./setup-cuve.jpg
+    caption: "Le tirage dans la cuve"
 prints: []
 ---
 
