@@ -70,7 +70,7 @@ const hasList = (await getWorkshops()).length > 1;
                   {setup.map((item) => (
                     <li>
                       <figure>
-                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 640px) 50vw, (max-width: 960px) 50vw, 360px" />
+                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 960px) 50vw, 360px" />
                         {item.caption && <figcaption>{item.caption}</figcaption>}
                       </figure>
                     </li>
