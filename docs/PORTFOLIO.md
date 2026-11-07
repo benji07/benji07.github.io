@@ -17,8 +17,10 @@ src/content/series/lyon-la-nuit/
 
 ## Les images
 
-- Exporte-les déjà compressées (JPEG, ~2500 px sur le grand côté, qualité 80
-  à 85 suffisent). Astro génère ensuite les tailles plus petites au build.
+- Passe-les dans `node scripts/compress-photo.mjs <source> <destination.jpg>` :
+  JPEG, 2500 px max sur le grand côté, qualité 80 (500 à 800 ko par photo).
+  Un export en qualité maximale pèse ~2 Mo, trop lourd pour le dépôt. Astro
+  génère ensuite les tailles plus petites au build.
 - Le nom du fichier devient l'URL de la photo : `07.jpg` →
   `/portfolio/lyon-la-nuit/07/`. Évite de renommer un fichier déjà publié.
   Sur la page de la série, un clic ouvre la photo dans une modale qui prend

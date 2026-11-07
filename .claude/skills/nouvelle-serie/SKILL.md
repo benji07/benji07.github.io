@@ -59,9 +59,6 @@ Avec AskUserQuestion (choix fermés) :
   habituel) ou en ligne (`draft: false`).
 - **Ordre** : ordre alphabétique des fichiers, ou ordre que l'utilisateur
   va donner.
-- **Redimensionnement** (seulement si des images dépassent 2500 px ou ne sont
-  pas en JPEG) : convertir en JPEG ~2500 px qualité 85 (recommandé), ou copier
-  tel quel.
 
 En texte libre, dans un même message :
 
@@ -104,11 +101,11 @@ Après validation du slug et de l'index.md (étape 4), dans
 `01.jpg`, `02.jpg`… (trois chiffres au-delà de 99 photos). Le nom devient
 l'URL de la photo, d'où la numérotation neutre.
 
-- Copie simple : `cp "<source>" "src/content/series/<slug>/01.jpg"` (extension
-  en minuscules, `.jpeg` → `.jpg`).
-- Conversion / redimensionnement, si validé :
-  `sips -s format jpeg -s formatOptions 85 -Z 2500 "<source>" --out "src/content/series/<slug>/01.jpg"`
-  (`-Z` ne fait que réduire : une image plus petite reste à sa taille).
+- Toujours passer par le script de compression, jamais de copie brute : un
+  scan exporté en qualité maximale pèse ~2 Mo, trop lourd pour le dépôt.
+  `node scripts/compress-photo.mjs "<source>" "src/content/series/<slug>/01.jpg"`
+  (JPEG sRGB, 2500 px max, qualité 80 mozjpeg ; n'agrandit jamais). Vise
+  moins de 800 ko par photo ; signale celles qui dépassent.
 - Jamais de recadrage ni de bordure.
 
 Garde la correspondance nom d'origine → numéro : elle sert pour les infos par
