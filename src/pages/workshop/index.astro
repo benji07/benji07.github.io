@@ -22,7 +22,7 @@ if (workshops.length === 1) {
         workshops.map((workshop) => (
           <li>
             <a href={`/workshop/${workshop.id}/`}>
-              <span class="title title--s">{workshop.data.title} →</span>
+              <span class="title title--s">{workshop.data.title} <span aria-hidden="true">→</span></span>
               <span class="prose">{workshop.data.summary}</span>
               {workshop.data.infos && <span class="hint mono">{workshop.data.infos}</span>}
             </a>

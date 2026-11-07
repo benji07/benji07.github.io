@@ -34,10 +34,10 @@ const base = `/portfolio/${series.id}`;
 <BaseLayout title={title} current="portfolio" ogImage={og.src} description={photo.description ?? `${series.data.title} : ${title}`}>
   <main class="photo-page">
     <nav class="nav mono" aria-label="Navigation dans la série">
-      <a class="back" href={`${base}/`}>← {series.data.title}</a>
+      <a class="back" href={`${base}/`}><span aria-hidden="true">←</span> {series.data.title}</a>
       <span class="arrows">
-        {previous ? <a href={`${base}/${previous.slug}/`} aria-label="Photo précédente">← Précédente</a> : <span />}
-        {next && <a href={`${base}/${next.slug}/`} aria-label="Photo suivante">Suivante →</a>}
+        {previous ? <a href={`${base}/${previous.slug}/`} aria-label="Photo précédente"><span aria-hidden="true">←</span> Précédente</a> : <span />}
+        {next && <a href={`${base}/${next.slug}/`} aria-label="Photo suivante">Suivante <span aria-hidden="true">→</span></a>}
       </span>
     </nav>
 

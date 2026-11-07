@@ -23,13 +23,13 @@ const links = [
         <a
           href={link.href}
           class:list={{ active: current === link.key }}
-          aria-current={Astro.url.pathname === link.href ? 'page' : undefined}
+          aria-current={Astro.url.pathname === link.href ? 'page' : current === link.key ? 'true' : undefined}
         >
           {link.label}
         </a>
       ))
     }
-    <a class:list={{ 'hide-mobile': current !== 'home' }} href={SITE.instagram}>Instagram ↗</a>
+    <a class:list={{ 'hide-mobile': current !== 'home' }} href={SITE.instagram}>Instagram <span aria-hidden="true">↗</span></a>
   </nav>
 </header>
 

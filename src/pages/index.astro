@@ -29,13 +29,20 @@ if (await reachable(SITE.gravatar)) {
   console.warn('[gravatar] injoignable, image servie depuis gravatar.com');
 }
 
+// Alt d'une vignette Instagram : la première ligne de la légende, sans les
+// hashtags, que le lecteur d'écran lirait un par un.
+function instagramAlt(caption: string): string {
+  const line = caption.split('\n')[0].split('#')[0].trim();
+  return line || 'Photo Instagram';
+}
+
 // Vignettes : Instagram si le jeton est configuré, sinon les dernières
 // photos du portfolio, sinon rien (le bloc @benji07 reste affiché).
 const thumbs: { src: string; href: string; alt: string }[] = [];
 for (const post of await getInstagramPosts(6)) {
   if (!(await reachable(post.image))) continue;
   const image = await getImage({ src: post.image, inferSize: true, width: 360, height: 450, fit: 'cover', format: 'webp' });
-  thumbs.push({ src: image.src, href: post.permalink, alt: post.caption || 'Photo Instagram' });
+  thumbs.push({ src: image.src, href: post.permalink, alt: instagramAlt(post.caption) });
 }
 const fromInstagram = thumbs.length > 0;
 if (!fromInstagram) {
@@ -53,24 +60,24 @@ if (!fromInstagram) {
 <BaseLayout current="home">
   <main class="home">
     <section class="intro">
-      <img class="avatar" src={avatar} width="720" height="720" alt={page.title} />
+      <img class="avatar" src={avatar} width="720" height="720" alt="" />
       <h1 class="title">{page.title}</h1>
       <div class="prose bio"><page.Content /></div>
       <p class="links mono">
-        <a href="/portfolio/">Portfolio →</a>
-        <a href={SITE.github}>GitHub ↗</a>
-        <a href={SITE.linkedin}>LinkedIn ↗</a>
+        <a href="/portfolio/">Portfolio <span aria-hidden="true">→</span></a>
+        <a href={SITE.github}>GitHub <span aria-hidden="true">↗</span></a>
+        <a href={SITE.linkedin}>LinkedIn <span aria-hidden="true">↗</span></a>
       </p>
     </section>
 
     <div class="side">
-      <section class="instagram section" aria-labelledby="instagram-title">
+      <section class="instagram section" aria-labelledby="instagram-label">
         <div class="instagram-head">
           <div class="instagram-title">
-            <span class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</span>
-            <a id="instagram-title" class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
+            <h2 id="instagram-label" class="label">{fromInstagram ? 'Dernières photos sur Instagram' : 'Sur Instagram'}</h2>
+            <a class="handle" href={SITE.instagram}>{SITE.instagramHandle}</a>
           </div>
-          <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+          <a class="button button--solid desktop-only" href={SITE.instagram}>Suivre sur Instagram <span aria-hidden="true">↗</span></a>
         </div>
         {
           thumbs.length > 0 && (
@@ -85,7 +92,7 @@ if (!fromInstagram) {
             </ul>
           )
         }
-        <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram ↗</a>
+        <a class="button button--solid mobile-only" href={SITE.instagram}>Suivre sur Instagram <span aria-hidden="true">↗</span></a>
       </section>
 
       <div class="workshops">
@@ -97,9 +104,9 @@ if (!fromInstagram) {
               <p class="prose">{workshop.data.summary}</p>
               {workshop.data.infos && <span class="mono caption muted">{workshop.data.infos}</span>}
               <div class="actions">
-                <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe →</a>
+                <a class="button" href={`/workshop/${workshop.id}/`}>Comment ça se passe <span aria-hidden="true">→</span></a>
                 <a class="mono caption" href={workshop.data.booking ?? SITE.instagram}>
-                  {workshop.data.booking ? 'Réserver une date ↗' : 'Demander une date ↗'}
+                  {workshop.data.booking ? 'Réserver une date' : 'Demander une date'} <span aria-hidden="true">↗</span>
                 </a>
               </div>
             </section>
@@ -116,7 +123,7 @@ if (!fromInstagram) {
                 <li>
                   <a href={data.url}>
                     <span>{data.name}</span>
-                    <span class="hint">{data.hint} ↗</span>
+                    <span class="hint">{data.hint} <span aria-hidden="true">↗</span></span>
                   </a>
                 </li>
               ))}
@@ -199,6 +206,11 @@ if (!fromInstagram) {
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .instagram-title h2 {
+    margin: 0;
+    font-weight: 400;
   }
 
   .handle {

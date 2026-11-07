@@ -19,7 +19,7 @@ const { Content } = await render(post);
 <BaseLayout title={post.data.title} current="blog">
   <main class="post">
     <header>
-      <a class="back" href="/blog/">← Archives du blog</a>
+      <a class="back" href="/blog/"><span aria-hidden="true">←</span> Archives du blog</a>
       <h1 class="title title--m">{post.data.title}</h1>
       <time class="label" datetime={post.date.toISOString().slice(0, 10)}>{formatDate(post.date)}</time>
     </header>
@@ -75,6 +75,12 @@ const { Content } = await render(post);
     letter-spacing: -0.01em;
     line-height: 1.25;
     margin: 32px 0 12px;
+  }
+
+  .content :global(a) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
 
   .content :global(pre) {
