@@ -4,12 +4,6 @@ import type { ImageMetadata } from 'astro';
 export type Series = CollectionEntry<'series'>;
 export type SeriesPhoto = Series['data']['photos'][number] & { slug: string };
 
-export const FORMAT_LABELS: Record<Series['data']['format'], string> = {
-  '135': '135',
-  '6x6': '6×6',
-  polaroid: 'Polaroid',
-};
-
 // Les séries publiées, la plus récente d'abord. Les brouillons restent
 // visibles en `astro dev` pour pouvoir les relire.
 export async function getSeries(): Promise<Series[]> {
@@ -44,11 +38,32 @@ export function getCover(series: Series): ImageMetadata {
   return series.data.cover ?? series.data.photos[0].src;
 }
 
-export function seriesMeta(series: Series): string {
-  const { format, year, film } = series.data;
-  return [FORMAT_LABELS[format], year, film].filter(Boolean).join(' · ');
+// Lignes affichées sous le titre d'une série : l'année, puis la pellicule.
+export function seriesMeta(series: Series): string[] {
+  const { year, film } = series.data;
+  return [String(year), film].filter((line): line is string => Boolean(line));
 }
 
 export function photoAlt(series: Series, photo: SeriesPhoto, index: number): string {
   return photo.alt ?? photo.title ?? `${series.data.title}, photo ${index + 1}`;
+}
+
+export function photoCounter(series: Series, index: number): string {
+  return `${index + 1} / ${series.data.photos.length}`;
+}
+
+// Titre de la page d'une photo (et de l'onglet quand la modale l'affiche).
+export function photoTitle(series: Series, photo: SeriesPhoto, index: number): string {
+  return photo.title ?? `${series.data.title}, ${photoCounter(series, index)}`;
+}
+
+// Détails affichés à côté de la photo ; les champs vides sont omis.
+export function photoFacts(series: Series, photo: SeriesPhoto): [string, string][] {
+  const facts = [
+    ['Appareil', photo.camera],
+    ['Pellicule', photo.film ?? series.data.film],
+    ['Tirage', photo.print],
+    ['Date', photo.date ?? String(series.data.year)],
+  ];
+  return facts.filter((fact): fact is [string, string] => Boolean(fact[1]));
 }

@@ -17,10 +17,14 @@ src/content/series/lyon-la-nuit/
 
 ## Les images
 
-- Exporte-les déjà compressées (JPEG, ~2500 px sur le grand côté, qualité 80
-  à 85 suffisent). Astro génère ensuite les tailles plus petites au build.
+- Passe-les dans `node scripts/compress-photo.mjs <source> <destination.jpg>` :
+  JPEG, 2500 px max sur le grand côté, qualité 80 (500 à 800 ko par photo).
+  Un export en qualité maximale pèse ~2 Mo, trop lourd pour le dépôt. Astro
+  génère ensuite les tailles plus petites au build.
 - Le nom du fichier devient l'URL de la photo : `07.jpg` →
   `/portfolio/lyon-la-nuit/07/`. Évite de renommer un fichier déjà publié.
+  Sur la page de la série, un clic ouvre la photo dans une modale qui prend
+  cette adresse ; la page de la photo sert aux liens directs et au partage.
 - Chaque photo garde son format d'origine : pas de recadrage, pas de bordure
   ajoutée. Pour les Polaroid, scanne le cliché avec son cadre blanc.
 
@@ -29,10 +33,10 @@ src/content/series/lyon-la-nuit/
 ```yaml
 ---
 title: "Lyon la nuit"
-format: "135"            # 135 | 6x6 | polaroid — une série n'a qu'un format
-year: 2025               # affiché sous le titre
+format: "135"            # 135 | 6x6 | polaroid — une série n'a qu'un format (non affiché)
+year: "Novembre 2025"    # texte affiché sous le titre : mois et année, ou l'année seule
 film: "Kodak Portra 800" # facultatif
-date: 2025-11-02         # date de publication : ordonne les séries, la plus récente d'abord
+date: 2025-11-02         # jour de prise de vue (ou 1er du mois) : ordonne les séries, la plus récente d'abord
 cover: ./03.jpg          # facultatif, sinon la première photo
 draft: false             # true : visible en local (npm run dev), masquée en ligne
 photos:
@@ -43,12 +47,13 @@ photos:
     camera: "Nikon FM2, 50 mm"
     film: "Cinestill 800T"          # remplace la pellicule de la série
     print: "RA-4, 24×30"
-    date: "novembre 2025"
+    date: "2 novembre 2025"         # seulement si différente de la série
     alt: "Description de l'image pour les lecteurs d'écran"
   - src: ./03.jpg
 ---
 
-Un ou deux paragraphes qui présentent la série : où, quand, pourquoi.
+Un ou deux paragraphes qui présentent la série : où, pourquoi, ce qu'elle
+raconte. Inutile de rappeler la date, elle est déjà sous le titre.
 
 Ils s'affichent à côté des photos sur la page de la série.
 ```

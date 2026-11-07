@@ -1,6 +1,6 @@
 ---
-// Photos d'une série en lignes justifiées : chaque photo garde son format,
-// toutes les photos d'une ligne ont la même hauteur.
+// Photos d'une série, deux par ligne (une sur mobile) : chaque photo garde
+// son format, les deux photos d'une ligne ont la même hauteur.
 import { Image } from 'astro:assets';
 import type { Series } from '../lib/series';
 import { getPhotos, photoAlt } from '../lib/series';
@@ -12,20 +12,29 @@ interface Props {
 const { series } = Astro.props;
 const photos = getPhotos(series);
 const polaroid = series.data.format === 'polaroid';
+const ratios = photos.map((photo) => photo.src.width / photo.src.height);
+
+// Somme des ratios de la ligne : chaque photo y prend une largeur
+// proportionnelle à son ratio. Une photo seule en fin de série compte
+// double, pour garder une demi-largeur.
+const rowRatio = (index: number) => {
+  const first = index - (index % 2);
+  return ratios[first] + (ratios[first + 1] ?? ratios[first]);
+};
 ---
 
 <ul class:list={['rows', { polaroid }]} role="list">
   {
     photos.map((photo, index) => {
-      const ratio = photo.src.width / photo.src.height;
+      const ratio = ratios[index];
       return (
-        <li style={`--ratio: ${ratio.toFixed(4)}`}>
-          <a href={`/portfolio/${series.id}/${photo.slug}/`}>
+        <li style={`--ratio: ${ratio.toFixed(4)}; --row-ratio: ${rowRatio(index).toFixed(4)}`}>
+          <a href={`/portfolio/${series.id}/${photo.slug}/`} data-slug={photo.slug}>
             <Image
               src={photo.src}
               alt={photoAlt(series, photo, index)}
               widths={[480, 800, 1200]}
-              sizes="(max-width: 640px) 100vw, 50vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw"
             />
           </a>
         </li>
@@ -36,23 +45,17 @@ const polaroid = series.data.format === 'polaroid';
 
 <style>
   .rows {
-    --row: 300px;
+    --gap: var(--gap-photos);
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  /* Empêche la dernière ligne de s'étirer démesurément. */
-  .rows::after {
-    content: '';
-    flex-grow: 999;
+    gap: var(--gap);
   }
 
   li {
-    flex: var(--ratio) 1 calc(var(--ratio) * var(--row));
+    width: calc((100% - var(--gap)) * var(--ratio) / var(--row-ratio));
     min-width: 0;
   }
 
@@ -70,10 +73,9 @@ const polaroid = series.data.format === 'polaroid';
   }
 
   .polaroid {
-    --row: 260px;
+    --gap: 24px;
     background: #eef0f3;
     padding: 32px;
-    gap: 24px;
   }
 
   .polaroid img {
@@ -81,15 +83,13 @@ const polaroid = series.data.format === 'polaroid';
   }
 
   @media (max-width: 640px) {
-    .rows {
-      --row: 150px;
-      gap: 8px;
+    li {
+      width: 100%;
     }
 
     .polaroid {
-      --row: 140px;
+      --gap: 16px;
       padding: 16px;
-      gap: 16px;
     }
   }
 </style>

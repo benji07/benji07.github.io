@@ -105,25 +105,17 @@ const hasList = (await getWorkshops()).length > 1;
   .workshop {
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: var(--space-page);
   }
 
   .head {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--space-head);
   }
 
   .alone {
     max-width: 560px;
-  }
-
-  /* Texte plus long que sur une série : colonne de gauche plus large. */
-  @media (min-width: 961px) {
-    .split__aside:not(.alone) {
-      flex-basis: 420px;
-      max-width: 440px;
-    }
   }
 
   .cta {
@@ -144,7 +136,7 @@ const hasList = (await getWorkshops()).length > 1;
   section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-label);
   }
 
   h2 {
@@ -180,7 +172,7 @@ const hasList = (await getWorkshops()).length > 1;
   .setup {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: var(--gap-photos);
   }
 
   .setup img {
@@ -193,7 +185,7 @@ const hasList = (await getWorkshops()).length > 1;
   .prints {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--gap-photos);
   }
 
   .prints::after {
@@ -214,10 +206,6 @@ const hasList = (await getWorkshops()).length > 1;
   @media (max-width: 640px) {
     .cta {
       align-self: stretch;
-    }
-
-    .setup {
-      gap: 8px;
     }
 
     .prints li {
