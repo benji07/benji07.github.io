@@ -135,7 +135,7 @@ if (!fromInstagram) {
   .home {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 56px 72px;
+    gap: var(--gap-columns);
     align-items: start;
   }
 
@@ -160,7 +160,7 @@ if (!fromInstagram) {
   .projects {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-label);
   }
 
   .avatar {
@@ -216,7 +216,7 @@ if (!fromInstagram) {
     padding: 0;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: var(--gap-photos);
   }
 
   .thumbs img {
@@ -264,18 +264,14 @@ if (!fromInstagram) {
     display: none;
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 960px) {
     .home {
       grid-template-columns: minmax(0, 1fr);
-      gap: 40px;
+      gap: var(--space-page);
     }
 
     .side {
-      gap: 40px;
-    }
-
-    .thumbs {
-      gap: 4px;
+      gap: var(--space-page);
     }
 
     .projects ul {

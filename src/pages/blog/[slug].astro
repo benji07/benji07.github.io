@@ -18,15 +18,17 @@ const { Content } = await render(post);
 
 <BaseLayout title={post.data.title} current="blog">
   <main class="post">
-    <a class="back" href="/blog/">← Archives du blog</a>
     <header>
+      <a class="back" href="/blog/">← Archives du blog</a>
       <h1 class="title title--m">{post.data.title}</h1>
       <time class="label" datetime={post.date.toISOString().slice(0, 10)}>{formatDate(post.date)}</time>
     </header>
-    <p class="notice">Article publié en {post.date.getUTCFullYear()} et conservé en l'état : son contenu est probablement dépassé.</p>
-    <article class="content">
-      <Content />
-    </article>
+    <div class="body">
+      <p class="notice">Article publié en {post.date.getUTCFullYear()} et conservé en l'état : son contenu est probablement dépassé.</p>
+      <article class="content">
+        <Content />
+      </article>
+    </div>
   </main>
 </BaseLayout>
 
@@ -35,13 +37,19 @@ const { Content } = await render(post);
     max-width: 760px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--space-page);
   }
 
   header {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-head);
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
   }
 
   .notice {

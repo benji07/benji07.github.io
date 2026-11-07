@@ -12,7 +12,6 @@ interface Props {
 
 const { src, alt, polaroid = false } = Astro.props;
 const blur = await getImage({ src, width: 48, format: 'webp' });
-const landscape = src.width >= src.height;
 ---
 
 <div class="cover" style={`--blur: url(${blur.src})`}>
@@ -20,8 +19,8 @@ const landscape = src.width >= src.height;
     src={src}
     alt={alt}
     widths={[320, 480, 720]}
-    sizes="(max-width: 640px) 45vw, 30vw"
-    class:list={['photo', { landscape, polaroid }]}
+    sizes="(max-width: 960px) 45vw, 30vw"
+    class:list={['photo', { polaroid }]}
   />
 </div>
 
@@ -46,14 +45,10 @@ const landscape = src.width >= src.height;
 
   .photo {
     position: relative;
-    max-width: 62%;
-    max-height: 70%;
+    max-width: 88%;
+    max-height: 88%;
     width: auto;
     height: auto;
     box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
-  }
-
-  .photo.landscape {
-    max-width: 84%;
   }
 </style>

@@ -12,6 +12,15 @@
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --gutter: clamp(16px, 3vw, 24px);
+  --page-max: 1240px;
+
+  /* Espacements partagés par toutes les pages. Points de rupture : 640px
+     (mobile) et 960px (une colonne). */
+  --space-page: 40px; /* en-tête de page → contenu */
+  --space-head: 20px; /* dans l'en-tête : retour, titre, méta, chapô */
+  --space-label: 12px; /* étiquette → contenu */
+  --gap-columns: 56px; /* entre deux colonnes */
+  --gap-photos: 12px; /* entre deux photos */
 }
 
 *,
@@ -61,7 +70,7 @@ h3 {
 }
 
 .page {
-  max-width: 1240px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 40px var(--gutter) 48px;
   display: flex;
@@ -74,6 +83,17 @@ h3 {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Année et pellicule d'une série, une info par ligne. */
+.series-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -166,6 +186,10 @@ h3 {
     gap: 40px;
   }
 
+  :root {
+    --gap-photos: 8px;
+  }
+
   .button {
     width: 100%;
     min-height: 48px;
@@ -243,25 +267,28 @@ h3 {
   color: var(--muted);
 }
 
-/* Texte à gauche, contenu à droite ; empilés sur petit écran */
+/* Texte à gauche (1/3), images à droite (2/3) : l'inverse de l'accueil,
+   où le texte domine. Empilés sur petit écran. */
 .split {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 40px 56px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-page) var(--gap-columns);
+  align-items: start;
 }
 
 .split__aside {
-  flex: 1 1 300px;
-  max-width: 380px;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-head);
+}
+
+/* Texte sans images : il prend toute la largeur. */
+.split__aside:only-child {
+  grid-column: 1 / -1;
 }
 
 .split__main {
-  flex: 999 1 600px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -269,7 +296,7 @@ h3 {
 }
 
 @media (max-width: 960px) {
-  .split__aside {
-    max-width: none;
+  .split {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
