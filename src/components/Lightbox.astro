@@ -204,6 +204,11 @@ const photos = getPhotos(series);
     .word {
       display: none;
     }
+
+    /* Le cadre gris touche les bords de l'écran, la photo garde sa marge. */
+    .stage {
+      margin: 0 calc(-1 * var(--gutter));
+    }
   }
 </style>
 
