@@ -64,8 +64,13 @@ const links = [
     color: var(--muted);
   }
 
+  /* Rubrique en cours, soulignée : sert aussi de retour (la fiche d'une
+     série n'a pas de lien « toutes les séries »). */
   nav .active {
     color: var(--fg);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
   }
 
   @media (max-width: 640px) {
