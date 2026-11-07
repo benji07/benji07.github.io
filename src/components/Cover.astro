@@ -1,7 +1,7 @@
 ---
-// Couverture d'une série : la photo, entière, posée sur une version floue
-// d'elle-même. Les Polaroid gardent leur cadre (le scan l'inclut).
-import { Image, getImage } from 'astro:assets';
+// Couverture d'une série : la photo, entière, centrée dans un carré gris
+// uni. Les Polaroid gardent leur cadre (le scan l'inclut).
+import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
 interface Props {
@@ -11,10 +11,9 @@ interface Props {
 }
 
 const { src, alt, polaroid = false } = Astro.props;
-const blur = await getImage({ src, width: 48, format: 'webp' });
 ---
 
-<div class="cover" style={`--blur: url(${blur.src})`}>
+<div class="cover">
   <Image
     src={src}
     alt={alt}
@@ -27,28 +26,20 @@ const blur = await getImage({ src, width: 48, format: 'webp' });
 <style>
   .cover {
     position: relative;
-    overflow: hidden;
     aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: var(--soft);
   }
 
-  .cover::before {
-    content: '';
-    position: absolute;
-    inset: -15%;
-    background: var(--blur) center / cover;
-    filter: blur(24px) saturate(1.1);
-  }
-
+  /* En absolu, la photo ne peut pas agrandir le carré : sans ça, une photo
+     en portrait l'étirait en hauteur et les cartes n'avaient pas la même
+     taille. */
   .photo {
-    position: relative;
+    position: absolute;
+    inset: 0;
+    margin: auto;
     max-width: 88%;
     max-height: 88%;
     width: auto;
     height: auto;
-    box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
   }
 </style>
