@@ -24,9 +24,9 @@ const photos = getPhotos(series);
       <span class="series">{series.data.title}</span>
     </span>
     <span class="controls">
-      <button type="button" data-step="-1" aria-label="Photo précédente">← <span class="word">Précédente</span></button>
-      <button type="button" data-step="1" aria-label="Photo suivante"><span class="word">Suivante</span> →</button>
-      <button type="button" class="close">Fermer ✕</button>
+      <button type="button" data-step="-1" aria-label="Photo précédente"><span aria-hidden="true">←</span> <span class="word">Précédente</span></button>
+      <button type="button" data-step="1" aria-label="Photo suivante"><span class="word">Suivante</span> <span aria-hidden="true">→</span></button>
+      <button type="button" class="close">Fermer <span aria-hidden="true">✕</span></button>
     </span>
   </div>
   {

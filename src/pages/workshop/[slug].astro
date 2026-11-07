@@ -26,7 +26,7 @@ const hasList = (await getWorkshops()).length > 1;
 <BaseLayout title={title} description={summary} current="workshop">
   <main class="workshop">
     <header class="head">
-      {hasList && <a class="back" href="/workshop/">← Workshop</a>}
+      {hasList && <a class="back" href="/workshop/"><span aria-hidden="true">←</span> Workshop</a>}
       <h1 class="title title--l">{title}</h1>
     </header>
 
@@ -35,9 +35,9 @@ const hasList = (await getWorkshops()).length > 1;
         <div class="prose"><Content /></div>
         {
           booking ? (
-            <a class="button button--solid cta" href={booking}>Réserver une date ↗</a>
+            <a class="button button--solid cta" href={booking}>Réserver une date <span aria-hidden="true">↗</span></a>
           ) : (
-            <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram ↗</a>
+            <a class="button button--solid cta" href={SITE.instagram}>Demander une date sur Instagram <span aria-hidden="true">↗</span></a>
           )
         }
       </div>
@@ -70,7 +70,7 @@ const hasList = (await getWorkshops()).length > 1;
                   {setup.map((item) => (
                     <li>
                       <figure>
-                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[400, 800]} sizes="(max-width: 960px) 50vw, 360px" />
+                        <Image src={item.src} alt={item.alt ?? ''} widths={[400, 800]} sizes="(max-width: 960px) 50vw, 360px" />
                         {item.caption && <figcaption>{item.caption}</figcaption>}
                       </figure>
                     </li>
@@ -86,7 +86,7 @@ const hasList = (await getWorkshops()).length > 1;
                   {prints.map((item) => (
                     <li style={`--ratio: ${(item.src.width / item.src.height).toFixed(4)}`}>
                       <figure>
-                        <Image src={item.src} alt={item.alt ?? item.caption ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
+                        <Image src={item.src} alt={item.alt ?? ''} widths={[480, 960]} sizes="(max-width: 640px) 100vw, 40vw" />
                         {item.caption && <figcaption>{item.caption}</figcaption>}
                       </figure>
                     </li>

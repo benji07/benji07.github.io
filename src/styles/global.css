@@ -179,6 +179,14 @@ h3 {
   margin: 0 0 14px;
 }
 
+/* Dans un texte, la couleur seule ne distingue pas assez un lien du gris
+   qui l'entoure : il reste souligné. */
+.prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 640px) {
   .page {
     padding-top: 20px;
