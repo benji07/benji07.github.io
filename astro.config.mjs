@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { satteri } from '@astrojs/markdown-satteri';
+import hideLeadingEmoji from './src/lib/hast-emoji.mjs';
 
 // Site utilisateur GitHub Pages servi sur le domaine racine : pas de `base`.
 // Les autres projets (food, photo-explore, film-vault) sont des sites de
@@ -22,5 +24,8 @@ export default defineConfig({
   },
   markdown: {
     shikiConfig: { theme: 'github-light' },
+    // Le moteur par défaut d'Astro, avec l'emoji des listes masqué aux
+    // lecteurs d'écran (voir src/lib/hast-emoji.mjs).
+    processor: satteri({ hastPlugins: [hideLeadingEmoji] }),
   },
 });
