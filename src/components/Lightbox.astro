@@ -1,0 +1,332 @@
+---
+// Modale de la page d'une série : un clic sur une photo l'ouvre en grand,
+// avec ses détails à droite ou en dessous selon la place. L'adresse devient
+// celle de la page de la photo, qui reste servie pour les liens directs, le
+// partage et les navigateurs sans JavaScript.
+import { Image } from 'astro:assets';
+import PhotoInfo from './PhotoInfo.astro';
+import { SITE } from '../lib/site';
+import type { Series } from '../lib/series';
+import { getPhotos, photoAlt, photoTitle } from '../lib/series';
+
+interface Props {
+  series: Series;
+}
+
+const { series } = Astro.props;
+const photos = getPhotos(series);
+---
+
+<dialog class="lightbox" tabindex="-1" aria-label={series.data.title} data-title={`${series.data.title} · ${SITE.name}`}>
+  <div class="bar mono">
+    <span class="where">
+      <span class="count" aria-live="polite"></span>
+      <span class="series">{series.data.title}</span>
+    </span>
+    <span class="controls">
+      <button type="button" data-step="-1" aria-label="Photo précédente">← <span class="word">Précédente</span></button>
+      <button type="button" data-step="1" aria-label="Photo suivante"><span class="word">Suivante</span> →</button>
+      <button type="button" class="close">Fermer ✕</button>
+    </span>
+  </div>
+  {
+    photos.map((photo, index) => (
+      <article
+        class="slide"
+        hidden
+        data-slug={photo.slug}
+        data-href={`/portfolio/${series.id}/${photo.slug}/`}
+        data-title={`${photoTitle(series, photo, index)} · ${SITE.name}`}
+        data-ratio={(photo.src.width / photo.src.height).toFixed(4)}
+      >
+        <figure class="stage">
+          <Image src={photo.src} alt={photoAlt(series, photo, index)} widths={[640, 1024, 1600, 2048]} sizes="100vw" loading="lazy" />
+        </figure>
+        <div class="info">
+          <PhotoInfo series={series} photo={photo} index={index} heading="h2" />
+        </div>
+      </article>
+    ))
+  }
+</dialog>
+
+<style>
+  /* Doit rester aligné sur LAYOUT dans le script. */
+  .lightbox {
+    --frame-h: 100dvh;
+    /* Largeur de la colonne de texte d'une page série : 1/3 de la page,
+       qui ne dépasse pas --page-max. La photo prend le reste. */
+    --aside: calc((min(100vw, var(--page-max)) - 2 * var(--gutter) - var(--gap-columns)) / 3);
+    --bar: 52px;
+    --pad: 32px;
+    --below: 140px;
+
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  .lightbox:focus {
+    outline: none;
+  }
+
+  .lightbox::backdrop {
+    background: var(--bg);
+  }
+
+  :global(html:has(.lightbox[open])) {
+    overflow: hidden;
+  }
+
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    height: var(--bar);
+    padding: 0 var(--gutter);
+    font-size: 13px;
+    background: var(--bg);
+  }
+
+  /* Position dans la série, puis son titre, coupé s'il manque de place. */
+  .where {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .series {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+  }
+
+  .series::before {
+    content: '·';
+    margin-right: 8px;
+  }
+
+  .controls {
+    flex-shrink: 0;
+    display: flex;
+    gap: 20px;
+  }
+
+  button {
+    padding: 12px 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  button:hover {
+    color: var(--fg);
+  }
+
+  button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .slide {
+    display: grid;
+    gap: var(--space-page) var(--gap-columns);
+    padding: 0 var(--gutter) var(--gutter);
+  }
+
+  .slide[hidden] {
+    display: none;
+  }
+
+  .stage {
+    min-width: 0;
+    margin: 0;
+    padding: var(--pad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--soft);
+  }
+
+  .stage img {
+    width: auto;
+    max-width: 100%;
+    max-height: var(--img-h);
+    object-fit: contain;
+  }
+
+  .info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Détails à droite, aussi larges que sur une page série : la photo occupe
+     tout le reste et toute la hauteur de la modale. */
+  [data-layout='side'] .slide {
+    grid-template-columns: minmax(0, 1fr) var(--aside);
+    height: calc(var(--frame-h) - var(--bar));
+  }
+
+  [data-layout='side'] .stage {
+    --img-h: calc(var(--frame-h) - var(--bar) - var(--gutter) - 2 * var(--pad));
+    height: 100%;
+  }
+
+  /* Détails en dessous : le haut des détails dépasse sous la photo. */
+  [data-layout='below'] .stage {
+    --img-h: calc(var(--frame-h) - var(--bar) - var(--below) - 2 * var(--pad));
+  }
+
+  @media (max-width: 640px) {
+    .lightbox {
+      --pad: 16px;
+    }
+
+    .word {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Doit rester aligné sur les variables CSS de .lightbox.
+  const LAYOUT = { bar: 52, gap: 56, below: 140, pageMax: 1240 };
+
+  const dialog = document.querySelector<HTMLDialogElement>('dialog.lightbox');
+  if (dialog) {
+    const slides = [...dialog.querySelectorAll<HTMLElement>('.slide')];
+    const count = dialog.querySelector<HTMLElement>('.count')!;
+    const steps = [...dialog.querySelectorAll<HTMLButtonElement>('[data-step]')];
+    let current = -1;
+
+    // Détails à droite si la photo y garde à peu près la taille qu'elle
+    // aurait avec les détails en dessous ; sinon en dessous.
+    const layout = () => {
+      if (current < 0) return;
+      const ratio = Number(slides[current].dataset.ratio);
+      const stage = slides[current].querySelector('.stage')!;
+      const pad = parseFloat(getComputedStyle(stage).paddingTop);
+      const gutter = parseFloat(getComputedStyle(slides[current]).paddingLeft);
+      const { clientWidth: w, clientHeight: h } = dialog;
+      const aside = (Math.min(window.innerWidth, LAYOUT.pageMax) - 2 * gutter - LAYOUT.gap) / 3;
+      const sideWidth = w - 2 * gutter - LAYOUT.gap - aside - 2 * pad;
+      const side = Math.min(sideWidth, (h - LAYOUT.bar - gutter - 2 * pad) * ratio);
+      const below = Math.min(w - 2 * gutter - 2 * pad, (h - LAYOUT.bar - LAYOUT.below - 2 * pad) * ratio);
+      dialog.dataset.layout = sideWidth > 0 && side >= below * 0.9 ? 'side' : 'below';
+    };
+
+    const show = (index: number) => {
+      current = index;
+      slides.forEach((slide, i) => (slide.hidden = i !== index));
+      // Précharge les photos voisines.
+      for (const i of [index - 1, index + 1]) {
+        const img = slides[i]?.querySelector('img');
+        if (img) img.loading = 'eager';
+      }
+      count.textContent = `${index + 1} / ${slides.length}`;
+      steps.forEach((button) => {
+        const target = index + Number(button.dataset.step);
+        button.disabled = target < 0 || target >= slides.length;
+      });
+      document.title = slides[index].dataset.title!;
+      if (!dialog.open) {
+        dialog.showModal();
+        // Focus sur la modale elle-même, pas sur un bouton : sinon il prend
+        // un contour dès qu'on navigue au clavier.
+        dialog.focus();
+      }
+      // Un bouton devenu inactif (première ou dernière photo) perd le focus.
+      if (document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled) dialog.focus();
+      layout();
+      dialog.scrollTop = 0;
+    };
+
+    const hide = () => {
+      if (!dialog.open) return;
+      dialog.close();
+      document.title = dialog.dataset.title!;
+      document.querySelector<HTMLElement>(`a[data-slug="${slides[current].dataset.slug}"]`)?.focus();
+      current = -1;
+    };
+
+    const step = (delta: number) => {
+      const index = current + delta;
+      if (current < 0 || index < 0 || index >= slides.length) return;
+      show(index);
+      history.replaceState({ lightbox: index }, '', slides[index].dataset.href);
+    };
+
+    // Fermer = revenir à l'adresse de la série.
+    const close = () => (history.state?.lightbox !== undefined ? history.back() : hide());
+
+    document.querySelectorAll<HTMLAnchorElement>('a[data-slug]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        // Ctrl/Cmd-clic, clic molette… : on laisse ouvrir la page de la photo.
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const index = slides.findIndex((slide) => slide.dataset.slug === link.dataset.slug);
+        if (index < 0) return;
+        event.preventDefault();
+        show(index);
+        history.pushState({ lightbox: index }, '', slides[index].dataset.href);
+      });
+    });
+
+    window.addEventListener('popstate', (event) => {
+      const index = event.state?.lightbox;
+      if (typeof index === 'number' && slides[index]) show(index);
+      else hide();
+    });
+
+    steps.forEach((button) => button.addEventListener('click', () => step(Number(button.dataset.step))));
+    dialog.querySelector('.close')!.addEventListener('click', close);
+
+    // Échap : on passe par l'historique plutôt que la fermeture native.
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      close();
+    });
+
+    // Les flèches du clavier ramènent le focus sur la modale : le bouton
+    // cliqué avant ne garde pas de contour.
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      step(event.key === 'ArrowLeft' ? -1 : 1);
+      dialog.focus();
+    });
+
+    // Balayage horizontal sur la photo.
+    let start: { x: number; y: number } | undefined;
+    dialog.addEventListener('touchstart', (event) => {
+      const touch = event.touches[0];
+      start = (event.target as Element).closest('.stage') ? { x: touch.clientX, y: touch.clientY } : undefined;
+    }, { passive: true });
+    dialog.addEventListener('touchend', (event) => {
+      if (!start) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - start.x;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(touch.clientY - start.y)) step(dx < 0 ? 1 : -1);
+      start = undefined;
+    });
+
+    window.addEventListener('resize', layout);
+  }
+</script>

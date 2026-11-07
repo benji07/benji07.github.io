@@ -1,0 +1,52 @@
+---
+// Titre, description et détails d'une photo : sur sa page et dans la modale.
+import type { Series, SeriesPhoto } from '../lib/series';
+import { photoFacts, photoTitle } from '../lib/series';
+
+interface Props {
+  series: Series;
+  photo: SeriesPhoto;
+  index: number;
+  /** h1 sur la page de la photo, h2 dans la modale (la page a déjà son h1). */
+  heading?: 'h1' | 'h2';
+}
+
+const { series, photo, index, heading: Heading = 'h1' } = Astro.props;
+const facts = photoFacts(series, photo);
+---
+
+{
+  photo.title ? (
+    <Heading class="title title--m">{photo.title}</Heading>
+  ) : (
+    // Sans titre, le compteur n'apporte rien à l'œil : titre réservé aux lecteurs d'écran.
+    <Heading class="visually-hidden">{photoTitle(series, photo, index)}</Heading>
+  )
+}
+{photo.description && <p class="prose">{photo.description}</p>}
+<dl class="facts">
+  {
+    facts.map(([term, value]) => (
+      <>
+        <dt>{term}</dt>
+        <dd>{value}</dd>
+      </>
+    ))
+  }
+</dl>
+
+<style>
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .prose {
+    margin: 0;
+    font-size: 16px;
+  }
+</style>

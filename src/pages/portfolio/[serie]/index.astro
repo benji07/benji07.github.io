@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import { getImage } from 'astro:assets';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import PhotoRows from '../../../components/PhotoRows.astro';
+import Lightbox from '../../../components/Lightbox.astro';
 import { getSeries, getCover, seriesMeta, type Series } from '../../../lib/series';
 
 export async function getStaticPaths() {
@@ -25,40 +26,66 @@ const og = await getImage({ src: getCover(series), width: 1200, format: 'jpg' })
 ---
 
 <BaseLayout title={series.data.title} current="portfolio" ogImage={og.src}>
-  <main class="split">
-    <aside class="split__aside text">
+  <main class="serie">
+    <header class="head">
       <a class="back" href="/portfolio/">← Toutes les séries</a>
       <h1 class="title title--l">{series.data.title}</h1>
-      <span class="label">{seriesMeta(series)}</span>
-      <div class="prose"><Content /></div>
-      {
-        (previous || next) && (
-          <nav class="siblings mono" aria-label="Autres séries">
-            {previous ? <a href={`/portfolio/${previous.id}/`}>← Série précédente</a> : <span />}
-            {next && <a href={`/portfolio/${next.id}/`}>Suivante →</a>}
-          </nav>
-        )
-      }
-    </aside>
-    <div class="split__main">
-      <PhotoRows series={series} />
+      <p class="series-meta">{seriesMeta(series).map((line) => <span>{line}</span>)}</p>
+    </header>
+
+    <div class="split">
+      <aside class="split__aside text">
+        <div class="prose"><Content /></div>
+        {
+          (previous || next) && (
+            <nav class="siblings mono" aria-label="Autres séries">
+              {previous ? <a href={`/portfolio/${previous.id}/`}>← Série précédente</a> : <span />}
+              {next && <a href={`/portfolio/${next.id}/`}>Suivante →</a>}
+            </nav>
+          )
+        }
+      </aside>
+      <div class="split__main">
+        <PhotoRows series={series} />
+      </div>
     </div>
+    <Lightbox series={series} />
   </main>
 </BaseLayout>
 
 <style>
+  .serie {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-page);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-head);
+  }
+
   .text {
     position: sticky;
     top: 24px;
   }
 
-  .prose,
-  .siblings {
-    border-top: 1px solid var(--line);
-    padding-top: 20px;
+  /* Ici l'année et la pellicule tiennent sur une ligne. */
+  .series-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 8px;
+  }
+
+  .series-meta span + span::before {
+    content: '·';
+    margin-right: 8px;
   }
 
   .siblings {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
     display: flex;
     justify-content: space-between;
     gap: 12px;
