@@ -1,11 +1,20 @@
 // Calculs partagés par les outils du labo (src/pages/labo/).
 
-const NBSP = ' ';
+const NBSP = '\u00a0';
 
-/** Temps arrondi comme sur le compte-pose : au dixième sous 10 s, à la seconde au-delà. */
-export function formatTime(t: number): string {
+/**
+ * Temps réglable sur le compte-pose : au dixième sous 10 s, à la seconde
+ * au-delà (le compte-pose n'affiche plus les dixièmes à partir de 10 s).
+ */
+export function roundTime(t: number): number {
   const r = Math.round(t * 10) / 10;
-  return r >= 10 ? String(Math.round(t)) : r.toFixed(1).replace('.', ',');
+  return r >= 10 ? Math.round(t) : r;
+}
+
+/** Temps arrondi comme sur le compte-pose, à la française : « 8,5 », « 13 ». */
+export function formatTime(t: number): string {
+  const r = roundTime(t);
+  return r >= 10 ? String(r) : r.toFixed(1).replace('.', ',');
 }
 
 /** Nombre décimal à la française : 1.25 → « 1,25 ». */
