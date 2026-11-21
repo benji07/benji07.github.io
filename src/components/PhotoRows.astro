@@ -78,12 +78,12 @@ const rowRatio = (index: number) => {
 
   .polaroid {
     --gap: 24px;
-    background: #eef0f3;
+    background: var(--polaroid);
     padding: 32px;
   }
 
   .polaroid img {
-    box-shadow: 0 1px 3px rgba(17, 18, 20, 0.18);
+    box-shadow: var(--photo-shadow);
   }
 
   @media (max-width: 640px) {
