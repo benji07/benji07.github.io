@@ -1,0 +1,247 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { newTime } from '../../lib/labo/durst';
+import { formatNumber, formatTime } from '../../lib/labo/math';
+import { correct, grid } from '../../lib/labo/ring-around';
+
+// Valeurs par défaut ; le script reprend le réglage mémorisé par les outils couleur.
+const from = { y: 60, m: 45, c: 0 };
+const time = 14;
+const selected = 'magenta-1';
+const cells = grid();
+const correction = correct(selected, from);
+const t = newTime(time, from, correction.filtration);
+const channels = [
+  { key: 'y', label: 'Jaune' },
+  { key: 'm', label: 'Magenta' },
+  { key: 'c', label: 'Cyan' },
+] as const;
+---
+
+<LaboTool id="ring-around">
+  <form class="tool" id="ring-form">
+    <fieldset class="field ring-field">
+      <legend class="field__label">Le tirage ressemble à…</legend>
+      <div class="ring">
+        {
+          cells.map((tile) =>
+            tile ? (
+              <label class="tile" title={tile.name}>
+                <input type="radio" name="cast" value={tile.value} checked={tile.value === selected} aria-label={tile.name} />
+                <span class="tile__print" aria-hidden="true">
+                  {tile.bands.map((band) => (
+                    <span style={`background: ${band}`} />
+                  ))}
+                </span>
+                <span class="tile__label" aria-hidden="true">{tile.label}</span>
+              </label>
+            ) : (
+              <span aria-hidden="true" />
+            ),
+          )
+        }
+      </div>
+    </fieldset>
+
+    <div class="tool__result">
+      <fieldset class="field">
+        <legend class="filters__title">
+          <span>Réglage de ce tirage</span>
+          <span class="filters__note">repris de la page Durst</span>
+        </legend>
+        <div class="filters">
+          {
+            channels.map((ch) => (
+              <label class="field">
+                <span class="field__label">{ch.label}</span>
+                <input class={`input input--${ch.key}`} name={ch.key} type="number" inputmode="numeric" min="0" max="130" step="1" value={from[ch.key]} />
+              </label>
+            ))
+          }
+          <label class="field">
+            <span class="field__label">Temps (s)</span>
+            <input class="input" name="time" type="number" inputmode="decimal" min="0.5" step="any" value={time} />
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="result" aria-live="polite">
+        <span class="result__label" id="ring-cast">Tirage magenta, léger</span>
+        <span class="ring__changes" id="ring-changes">{correction.changes.join('   ')}</span>
+        <ul class="chips" id="ring-chips" role="list">
+          <li class="chip--y">Y {correction.filtration.y}</li>
+          <li class="chip--m">M {correction.filtration.m}</li>
+          <li class="chip--c">C {correction.filtration.c}</li>
+          <li class="chip--t">{formatTime(t)} s</li>
+        </ul>
+        <span class="result__detail" id="ring-detail">calcul : {formatNumber(t)} s, au lieu de {formatTime(time)} s</span>
+        <button class="button ring__apply" type="button" id="ring-apply">Partir de ce réglage</button>
+      </div>
+
+      <p class="tool__text">
+        Si un filtre devait passer sous 0, on ajoute plutôt les deux autres : retirer 5 de jaune revient à ajouter 5 de magenta et 5 de cyan.
+      </p>
+    </div>
+  </form>
+</LaboTool>
+
+<style>
+  .ring-field {
+    flex: 1 1 520px;
+    min-width: 0;
+  }
+
+  .ring {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 560px;
+  }
+
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tile input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .tile:has(input:checked) {
+    border-color: var(--fg);
+  }
+
+  .tile:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .tile__print {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    aspect-ratio: 1;
+  }
+
+  .tile__label {
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .tile:has(input:checked) .tile__label {
+    font-weight: 600;
+  }
+
+  .ring__changes {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    white-space: pre;
+  }
+
+  .ring__apply {
+    align-self: flex-start;
+    margin-top: 6px;
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+
+  .ring__apply:hover {
+    background: #2a2c31;
+    color: #ffffff;
+  }
+
+  @media (max-width: 640px) {
+    .ring {
+      gap: 4px;
+    }
+
+    .tile {
+      padding: 2px;
+    }
+
+    .tile__label {
+      font-size: 11px;
+    }
+  }
+</style>
+
+<script>
+  import { clamp, newTime, SETTING_KEY, type Filtration, type Setting } from '../../lib/labo/durst';
+  import { formatNumber, formatTime, readNumber } from '../../lib/labo/math';
+  import { correct } from '../../lib/labo/ring-around';
+  import { load, save } from '../../lib/labo/store';
+
+  const form = document.querySelector<HTMLFormElement>('#ring-form')!;
+  const input = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+  const castOut = document.querySelector<HTMLElement>('#ring-cast')!;
+  const changesOut = document.querySelector<HTMLElement>('#ring-changes')!;
+  const chips = [...document.querySelectorAll<HTMLElement>('#ring-chips li')];
+  const detail = document.querySelector<HTMLElement>('#ring-detail')!;
+  const apply = document.querySelector<HTMLButtonElement>('#ring-apply')!;
+
+  let next: { filtration: Filtration; time: number } | undefined;
+
+  function restore() {
+    const setting = load<Setting>(SETTING_KEY);
+    if (!setting || typeof setting.time !== 'number') return;
+    for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(setting[ch] ?? 0);
+    input('time').value = String(Math.round(setting.time * 10) / 10);
+  }
+
+  function update(event?: Event) {
+    const from = { y: clamp(readNumber(input('y'))), m: clamp(readNumber(input('m'))), c: clamp(readNumber(input('c'))) };
+    const time = readNumber(input('time'));
+    const value = form.querySelector<HTMLInputElement>('input[name="cast"]:checked')?.value ?? 'neutre';
+    const correction = correct(value, from);
+
+    castOut.textContent = correction.cast
+      ? `Tirage ${correction.cast.label.toLowerCase()}, ${correction.level === 1 ? 'léger' : 'fort'}`
+      : 'Tirage neutre';
+    changesOut.textContent = correction.changes.length ? correction.changes.join('   ') : 'Rien à changer';
+    chips[0].textContent = `Y ${correction.filtration.y}`;
+    chips[1].textContent = `M ${correction.filtration.m}`;
+    chips[2].textContent = `C ${correction.filtration.c}`;
+
+    if (time > 0) {
+      const t = newTime(time, from, correction.filtration);
+      chips[3].textContent = `${formatTime(t)} s`;
+      detail.textContent = `calcul : ${formatNumber(t)} s, au lieu de ${formatTime(time)} s`;
+      next = { filtration: correction.filtration, time: t };
+    } else {
+      chips[3].textContent = '–';
+      detail.textContent = 'Entre le temps de ce tirage.';
+      next = undefined;
+    }
+    apply.hidden = !next || correction.changes.length === 0;
+
+    // Seul le réglage du tirage est partagé, pas le choix de la vignette.
+    const target = event?.target as HTMLInputElement | undefined;
+    if (target && target.name !== 'cast' && time > 0) save<Setting>(SETTING_KEY, { ...from, time, at: Date.now() });
+  }
+
+  // Le tirage corrigé devient le nouveau point de départ.
+  apply.addEventListener('click', () => {
+    if (!next) return;
+    for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(next.filtration[ch]);
+    input('time').value = String(Math.round(next.time * 10) / 10);
+    save<Setting>(SETTING_KEY, { ...next.filtration, time: next.time, at: Date.now() });
+    form.querySelector<HTMLInputElement>('input[value="neutre"]')!.checked = true;
+    update();
+  });
+
+  restore();
+  update();
+  form.addEventListener('input', update);
+  form.addEventListener('submit', (event) => event.preventDefault());
+</script>
