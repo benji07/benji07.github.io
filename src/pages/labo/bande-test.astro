@@ -1,9 +1,6 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import { isLaboDraft } from '../../lib/content';
 import { computeStrip, DEFAULTS } from '../../lib/labo/bande-test';
-
-if (await isLaboDraft('bande-test')) return Astro.redirect('/labo/');
 
 // Rendu initial avec les réglages par défaut ; le script recalcule ensuite
 // à partir des réglages mémorisés et à chaque changement.
