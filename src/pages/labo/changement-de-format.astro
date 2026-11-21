@@ -3,8 +3,7 @@ import LaboTool from '../../components/LaboTool.astro';
 import { computeFormat, DEFAULTS, NEGATIVES } from '../../lib/labo/format';
 
 const result = computeFormat(DEFAULTS);
-// Proportions du dessin : la plus grande image fait 100 %.
-const max = Math.max(DEFAULTS.from, DEFAULTS.to);
+const [fromPrint, toPrint] = result.prints;
 ---
 
 <LaboTool id="changement-de-format">
@@ -13,7 +12,7 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
       <label class="field">
         <span class="field__label">Négatif</span>
         <select class="input" name="negative">
-          {NEGATIVES.map((neg) => <option value={neg.size} selected={neg.label === '24 × 36'}>{neg.label}</option>)}
+          {NEGATIVES.map((neg) => <option value={neg.id} selected={neg.id === DEFAULTS.negative}>{neg.label}</option>)}
         </select>
       </label>
       <label class="field">
@@ -39,8 +38,8 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
       </div>
 
       <div class="sizes" aria-hidden="true">
-        <span class="sizes__print" id="format-from" style={`width: ${(DEFAULTS.from / max) * 100}%`}>{DEFAULTS.from} cm</span>
-        <span class="sizes__print sizes__print--new" id="format-to" style={`width: ${(DEFAULTS.to / max) * 100}%`}>{DEFAULTS.to} cm</span>
+        <span class="sizes__print" id="format-from" style={`width: ${fromPrint.width}`}>{fromPrint.label}</span>
+        <span class="sizes__print sizes__print--new" id="format-to" style={`width: ${toPrint.width}`}>{toPrint.label}</span>
       </div>
     </section>
   </div>
@@ -103,35 +102,34 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
 </style>
 
 <script>
-  import { computeFormat, DEFAULTS, type FormatSettings } from '../../lib/labo/format';
+  import { computeFormat, type FormatSettings } from '../../lib/labo/format';
   import { readNumber } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
   const KEY = 'format';
   const form = document.querySelector<HTMLFormElement>('#format-form')!;
   const negative = form.querySelector<HTMLSelectElement>('select[name="negative"]')!;
-  const input = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+  // Champs lus une fois : le DOM ne change pas.
+  const FIELDS = ['time', 'from', 'to'] as const;
+  const inputs = new Map(FIELDS.map((name) => [name, form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
   const timeOut = document.querySelector<HTMLOutputElement>('#format-time')!;
   const comparison = document.querySelector<HTMLElement>('#format-comparison')!;
   const aperture = document.querySelector<HTMLElement>('#format-aperture')!;
-  const fromBox = document.querySelector<HTMLElement>('#format-from')!;
-  const toBox = document.querySelector<HTMLElement>('#format-to')!;
+  const boxes = [document.querySelector<HTMLElement>('#format-from')!, document.querySelector<HTMLElement>('#format-to')!];
 
   function restore() {
-    const stored = load<FormatSettings & { negativeIndex: number }>(KEY);
+    const stored = load<FormatSettings>(KEY);
     if (!stored) return;
-    // 4,5 × 6 et 6 × 6 ont le même grand côté : on garde l'option choisie.
-    if (typeof stored.negativeIndex === 'number' && negative.options[stored.negativeIndex]) {
-      negative.selectedIndex = stored.negativeIndex;
-    }
-    for (const name of ['time', 'from', 'to'] as const) {
+    if ([...negative.options].some((option) => option.value === stored.negative)) negative.value = stored.negative;
+    for (const name of FIELDS) {
       if (typeof stored[name] === 'number') input(name).value = String(stored[name]);
     }
   }
 
   function update() {
     const settings: FormatSettings = {
-      negative: Number(negative.value) || DEFAULTS.negative,
+      negative: negative.value,
       time: readNumber(input('time')),
       from: readNumber(input('from')),
       to: readNumber(input('to')),
@@ -142,18 +140,16 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
       aperture.textContent = '';
       return;
     }
-    save(KEY, { ...settings, negativeIndex: negative.selectedIndex });
+    save(KEY, settings);
 
     const result = computeFormat(settings);
     timeOut.textContent = result.time;
     comparison.textContent = result.comparison;
     aperture.textContent = result.aperture;
-
-    const max = Math.max(settings.from, settings.to);
-    fromBox.style.width = `${(settings.from / max) * 100}%`;
-    toBox.style.width = `${(settings.to / max) * 100}%`;
-    fromBox.textContent = `${settings.from} cm`;
-    toBox.textContent = `${settings.to} cm`;
+    boxes.forEach((box, i) => {
+      box.style.width = result.prints[i].width;
+      box.textContent = result.prints[i].label;
+    });
   }
 
   restore();
