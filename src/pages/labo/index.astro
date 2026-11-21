@@ -1,22 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getLaboTools, getPage, type LaboTool } from '../../lib/content';
+import { getLaboTools, getPage } from '../../lib/content';
+import '../../styles/labo.css';
 
 const page = await getPage('labo');
 const tools = await getLaboTools();
 
 // Regroupe les outils par section, dans l'ordre du premier outil de chacune.
-const sections = new Map<string, LaboTool[]>();
-for (const tool of tools) {
-  const list = sections.get(tool.data.section) ?? [];
-  list.push(tool);
-  sections.set(tool.data.section, list);
-}
+const sections = Map.groupBy(tools, (tool) => tool.data.section);
 ---
 
 <BaseLayout title={page.title} description={page.description} current="labo">
   <main class="labo-index">
-    <header class="head">
+    <header class="labo__head">
       <h1 class="title title--l">{page.title}</h1>
       <div class="prose"><page.Content /></div>
     </header>
@@ -50,25 +46,10 @@ for (const tool of tools) {
     gap: var(--space-page);
   }
 
-  .head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-head);
-    max-width: 720px;
-  }
-
   .group {
     display: flex;
     flex-direction: column;
     gap: var(--space-label);
-  }
-
-  .label-s {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 400;
-    color: var(--muted);
   }
 
   /* Cartes séparées par des filets ; une carte par ligne sur mobile. */

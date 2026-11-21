@@ -182,6 +182,7 @@ legend.field__label {
   margin: 0;
   font-family: var(--font-mono);
   font-size: 13px;
+  font-weight: 400;
   color: var(--muted);
 }
 
