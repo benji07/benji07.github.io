@@ -115,7 +115,6 @@ const labo = defineCollection({
     // du premier outil de chaque section.
     section: z.string(),
     order: z.number().default(0),
-    draft: z.boolean().default(false),
   }),
 });
 
