@@ -2,13 +2,17 @@
 import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE } from '../lib/site';
-import { getPage, getProjects, getWorkshops } from '../lib/content';
+import { getLaboTools, getPage, getProjects, getWorkshops } from '../lib/content';
 import { getInstagramPosts } from '../lib/instagram';
 import { getSeries, getPhotos, photoAlt } from '../lib/series';
 
 const page = await getPage('accueil');
 const workshops = await getWorkshops();
 const projects = await getProjects();
+// Sur l'accueil, l'étiquette perd le préfixe « Exposition · »
+// (« Exposition · N&B et couleur » → « N&B et couleur ») ; « Couleur · RA-4 »
+// reste entier.
+const laboTools = await getLaboTools();
 
 // Astro télécharge les images distantes en fin de build, et un échec y fait
 // tomber tout le build : on vérifie d'abord qu'elles répondent.
@@ -68,6 +72,30 @@ if (!fromInstagram) {
         <a href={SITE.github}>GitHub <span aria-hidden="true">↗</span></a>
         <a href={SITE.linkedin}>LinkedIn <span aria-hidden="true">↗</span></a>
       </p>
+
+      {
+        laboTools.length > 0 && (
+          <section class="labo section" aria-labelledby="labo-label">
+            <div class="labo-head">
+              <h2 id="labo-label" class="label">Outils de labo</h2>
+              <a class="mono caption" href="/labo/">Tous les outils <span aria-hidden="true">→</span></a>
+            </div>
+            <ul class="tools" role="list">
+              {laboTools.map((tool) => (
+                <li>
+                  <a href={`/labo/${tool.id}/`}>
+                    <span class="tools__kicker">{tool.data.section.replace(/^Exposition · /, '')}</span>
+                    <span class="tools__title">
+                      {tool.data.title} <span aria-hidden="true">→</span>
+                    </span>
+                    <span class="tools__summary">{tool.data.summary}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
     </section>
 
     <div class="side">
@@ -271,6 +299,71 @@ if (!fromInstagram) {
     column-gap: 32px;
   }
 
+  /* Outils de labo sous la présentation : cartes à filets comme /labo/,
+     2 × 2 sur grand écran, une par ligne sur mobile. */
+  .labo {
+    margin-top: 32px;
+  }
+
+  .labo-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+
+  .labo-head h2 {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .tools {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .tools a {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    background: var(--bg);
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .tools a:hover .tools__title {
+    text-decoration: underline;
+  }
+
+  .tools__kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tools__title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .tools__summary {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
   .mobile-only {
     display: none;
   }
@@ -305,6 +398,14 @@ if (!fromInstagram) {
 
     .bio {
       font-size: 17px;
+    }
+
+    .tools {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tools a {
+      padding: 18px 16px;
     }
 
     .actions {
