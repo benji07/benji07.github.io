@@ -12,6 +12,11 @@ const steps = [
   { value: 4, label: '¼' },
   { value: 6, label: '⅙' },
 ];
+const counts = [6, 12];
+const modes = [
+  { value: 'single', label: 'Un volet à la fois' },
+  { value: 'cumul', label: 'Cumulée' },
+];
 ---
 
 <LaboTool id="bande-test">
@@ -42,16 +47,28 @@ const steps = [
       <fieldset class="field">
         <legend class="field__label">Nombre de plages</legend>
         <div class="seg">
-          <label><input type="radio" name="count" value="6" /><span>6</span></label>
-          <label><input type="radio" name="count" value="12" checked /><span>12</span></label>
+          {
+            counts.map((count) => (
+              <label>
+                <input type="radio" name="count" value={count} checked={count === DEFAULTS.count} />
+                <span>{count}</span>
+              </label>
+            ))
+          }
         </div>
       </fieldset>
 
       <fieldset class="field">
         <legend class="field__label">Exposition</legend>
         <div class="seg">
-          <label><input type="radio" name="mode" value="single" checked /><span>Un volet à la fois</span></label>
-          <label><input type="radio" name="mode" value="cumul" /><span>Cumulée</span></label>
+          {
+            modes.map((mode) => (
+              <label>
+                <input type="radio" name="mode" value={mode.value} checked={mode.value === DEFAULTS.mode} />
+                <span>{mode.label}</span>
+              </label>
+            ))
+          }
         </div>
       </fieldset>
     </form>
@@ -136,15 +153,6 @@ const steps = [
     font-weight: 500;
   }
 
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
   /* Sur mobile, une case carrée et le temps seul, centré. */
   @media (max-width: 640px) {
     .strip {
@@ -182,7 +190,14 @@ const steps = [
   const KEY = 'bande-test';
   const form = document.querySelector<HTMLFormElement>('#strip-form')!;
   const startInput = form.querySelector<HTMLInputElement>('#strip-start')!;
-  const passes = [...document.querySelectorAll<HTMLElement>('.pass')];
+  // Cases de chaque passage, lues une fois : le DOM ne change pas.
+  const passes = [...document.querySelectorAll<HTMLElement>('.pass')].map((el) => ({
+    el,
+    flaps: [...el.querySelectorAll('li')].map((li) => ({
+      tone: li.querySelector<HTMLElement>('.strip__tone')!,
+      time: li.querySelector<HTMLElement>('.strip__time')!,
+    })),
+  }));
   const summary = document.querySelector<HTMLElement>('#strip-summary')!;
   const method = document.querySelector<HTMLElement>('#strip-method')!;
   const hint = document.querySelector<HTMLElement>('#strip-hint')!;
@@ -218,11 +233,11 @@ const steps = [
     const strip = computeStrip(settings);
     passes.forEach((pass, p) => {
       const flaps = strip.passes[p];
-      pass.hidden = !flaps;
+      pass.el.hidden = !flaps;
       if (!flaps) return;
-      pass.querySelectorAll('li').forEach((li, i) => {
-        li.querySelector<HTMLElement>('.strip__tone')!.style.background = flaps[i].tone;
-        li.querySelector<HTMLElement>('.strip__time')!.textContent = flaps[i].label;
+      pass.flaps.forEach((cell, i) => {
+        cell.tone.style.background = flaps[i].tone;
+        cell.time.textContent = flaps[i].label;
       });
     });
     summary.textContent = strip.summary;

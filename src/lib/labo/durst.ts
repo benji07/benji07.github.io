@@ -2,8 +2,10 @@
 // filtres, d'après la table de la notice (p. 16, « Filter factors »).
 //
 //   T(nouveau) = T(ancien) × (F1 × F2 × F3) nouveau ÷ (F1 × F2 × F3) ancien
+import { formatNumber, formatTime, stopWord } from './math';
 
-export type Channel = 'y' | 'm' | 'c';
+export const CHANNELS = ['y', 'm', 'c'] as const;
+export type Channel = (typeof CHANNELS)[number];
 
 export interface Filtration {
   y: number;
@@ -14,7 +16,10 @@ export interface Filtration {
 /** Valeur maximale des molettes. */
 export const MAX = 130;
 
-// Une valeur tous les 5, de 0 à 130.
+/** Écart entre deux lignes de la table. */
+export const STEP = 5;
+
+// Une valeur tous les STEP, de 0 à MAX.
 export const FACTORS: Record<Channel, number[]> = {
   y: [
     1.0, 1.02, 1.04, 1.06, 1.08, 1.1, 1.11, 1.12, 1.13, 1.14, 1.15, 1.16, 1.17, 1.17, 1.18, 1.18, 1.18, 1.19, 1.19, 1.19,
@@ -36,31 +41,61 @@ export const clamp = (v: number) => Math.max(0, Math.min(MAX, Number.isFinite(v)
 export function factor(channel: Channel, value: number): number {
   const table = FACTORS[channel];
   const v = clamp(value);
-  const i = Math.floor(v / 5);
+  const i = Math.floor(v / STEP);
   if (i >= table.length - 1) return table[table.length - 1];
-  return table[i] + (table[i + 1] - table[i]) * ((v - i * 5) / 5);
+  return table[i] + (table[i + 1] - table[i]) * ((v - i * STEP) / STEP);
 }
 
 export const product = ({ y, m, c }: Filtration) => factor('y', y) * factor('m', m) * factor('c', c);
 
+/** Facteur d'exposition entre deux filtrations. */
+export const ratio = (from: Filtration, to: Filtration) => product(to) / product(from);
+
 /** Nouveau temps de pose après un changement de filtration. */
 export function newTime(time: number, from: Filtration, to: Filtration): number {
-  return (time * product(to)) / product(from);
+  return time * ratio(from, to);
 }
 
 /**
- * Gris neutre pour allonger le temps : la plus petite valeur (par pas de 5)
+ * Gris neutre pour allonger le temps : la plus petite valeur (par pas de STEP)
  * à ajouter aux trois filtres pour atteindre `target`. Undefined si les
  * molettes n'y suffisent pas.
  */
 export function neutralFor(time: number, from: Filtration, target: number) {
   const room = MAX - Math.max(from.y, from.m, from.c);
-  for (let n = 5; n <= room; n += 5) {
+  const base = time / product(from);
+  for (let n = STEP; n <= room; n += STEP) {
     const to = { y: from.y + n, m: from.m + n, c: from.c + n };
-    const t = newTime(time, from, to);
+    const t = base * product(to);
     if (t >= target) return { added: n, filtration: to, time: t };
   }
   return undefined;
+}
+
+/**
+ * Textes du résultat, partagés par le rendu serveur et le script de la page.
+ * `time` doit être > 0.
+ */
+export function describe(time: number, from: Filtration, to: Filtration, target: number) {
+  const f = ratio(from, to);
+  const t = time * f;
+  const stops = Math.log2(f);
+  const neutral = target > 0 ? neutralFor(t, to, target) : undefined;
+  return {
+    /** Temps calcul\u00e9, non arrondi. */
+    t,
+    time: `${formatTime(t)} s`,
+    detail: `calcul : ${formatNumber(t)} s · × ${formatNumber(f, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} ${stopWord(Math.abs(stops))}`,
+    chips: [
+      ...CHANNELS.map((ch) => `${ch.toUpperCase()} ${neutral?.filtration[ch] ?? '–'}`),
+      neutral ? `${formatTime(neutral.time)} s` : '–',
+    ],
+    note: neutral
+      ? `+${neutral.added} sur chaque filtre. Refais une petite bande : le gris des filtres n’est jamais parfaitement neutre.`
+      : target > 0 && target <= t
+        ? 'Le temps est déjà assez long.'
+        : 'Pas atteignable avec les molettes : ferme le diaphragme d’un cran, ou engage le filtre supplémentaire de la tête.',
+  };
 }
 
 /**
