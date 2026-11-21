@@ -178,7 +178,7 @@ const channels = [
 
 <script>
   import { clamp, newTime, SETTING_KEY, type Filtration, type Setting } from '../../lib/labo/durst';
-  import { formatNumber, formatTime, readNumber } from '../../lib/labo/math';
+  import { formatNumber, formatTime, readNumber, roundTime } from '../../lib/labo/math';
   import { correct } from '../../lib/labo/ring-around';
   import { load, save } from '../../lib/labo/store';
 
@@ -196,7 +196,7 @@ const channels = [
     const setting = load<Setting>(SETTING_KEY);
     if (!setting || typeof setting.time !== 'number') return;
     for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(setting[ch] ?? 0);
-    input('time').value = String(Math.round(setting.time * 10) / 10);
+    input('time').value = String(roundTime(setting.time));
   }
 
   function update(event?: Event) {
@@ -234,8 +234,8 @@ const channels = [
   apply.addEventListener('click', () => {
     if (!next) return;
     for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(next.filtration[ch]);
-    input('time').value = String(Math.round(next.time * 10) / 10);
-    save<Setting>(SETTING_KEY, { ...next.filtration, time: next.time, at: Date.now() });
+    input('time').value = String(roundTime(next.time));
+    save<Setting>(SETTING_KEY, { ...next.filtration, time: roundTime(next.time), at: Date.now() });
     form.querySelector<HTMLInputElement>('input[value="neutre"]')!.checked = true;
     update();
   });
