@@ -243,6 +243,21 @@ h3 {
   font-weight: 500;
 }
 
+/* hidden l'emporte sur les display des composants (.button, .pass…). */
+[hidden] {
+  display: none !important;
+}
+
+/* Texte réservé aux lecteurs d'écran. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .back {
   font-family: var(--font-mono);
   font-size: 13px;

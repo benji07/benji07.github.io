@@ -1,0 +1,27 @@
+---
+// Gabarit d'une page d'outil du labo : retour au sommaire, titre et texte
+// d'intro tirés de src/content/labo/<id>.md, puis l'outil (slot).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getEntry } from 'astro:content';
+import { getLaboTool } from '../lib/content';
+import '../styles/labo.css';
+
+interface Props {
+  id: string;
+}
+
+const tool = await getLaboTool(Astro.props.id);
+// Seul le titre du sommaire sert ici : inutile de rendre son markdown.
+const labo = (await getEntry('pages', 'labo'))!.data;
+---
+
+<BaseLayout title={tool.title} description={tool.summary} current="labo">
+  <main class="labo">
+    <header class="labo__head">
+      <a class="back" href="/labo/"><span aria-hidden="true">←</span> {labo.title}</a>
+      <h1 class="title title--m">{tool.title}</h1>
+      <div class="prose"><tool.Content /></div>
+    </header>
+    <slot />
+  </main>
+</BaseLayout>

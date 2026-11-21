@@ -1,0 +1,251 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { computeStrip, DEFAULTS } from '../../lib/labo/bande-test';
+
+// Rendu initial avec les réglages par défaut ; le script recalcule ensuite
+// à partir des réglages mémorisés et à chaque changement.
+const strip = computeStrip(DEFAULTS);
+const steps = [
+  { value: 1, label: '1' },
+  { value: 2, label: '½' },
+  { value: 3, label: '⅓' },
+  { value: 4, label: '¼' },
+  { value: 6, label: '⅙' },
+];
+const counts = [6, 12];
+const modes = [
+  { value: 'single', label: 'Un volet à la fois' },
+  { value: 'cumul', label: 'Cumulée' },
+];
+---
+
+<LaboTool id="bande-test">
+  <div class="tool">
+    <form class="tool__form" id="strip-form">
+      <div class="field">
+        <label class="field__label" for="strip-start">Temps le plus court</label>
+        <div class="field__unit">
+          <input class="input" id="strip-start" name="start" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.start} />
+          <span>s</span>
+        </div>
+      </div>
+
+      <fieldset class="field">
+        <legend class="field__label">Pas entre deux volets (stop)</legend>
+        <div class="seg">
+          {
+            steps.map((step) => (
+              <label>
+                <input type="radio" name="den" value={step.value} checked={step.value === DEFAULTS.den} />
+                <span>{step.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="field__label">Nombre de plages</legend>
+        <div class="seg">
+          {
+            counts.map((count) => (
+              <label>
+                <input type="radio" name="count" value={count} checked={count === DEFAULTS.count} />
+                <span>{count}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="field__label">Exposition</legend>
+        <div class="seg">
+          {
+            modes.map((mode) => (
+              <label>
+                <input type="radio" name="mode" value={mode.value} checked={mode.value === DEFAULTS.mode} />
+                <span>{mode.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+    </form>
+
+    <section class="tool__result">
+      {
+        [0, 1].map((p) => (
+          <div class="pass" data-pass={p} hidden={p >= strip.passes.length}>
+            <p class="label-s">{p === 0 ? '1er passage' : '2e passage, papier tourné'}</p>
+            <ol class="strip" role="list">
+              {Array.from({ length: 6 }, (_, i) => {
+                const flap = strip.passes[p]?.[i];
+                return (
+                  <li>
+                    <span class="strip__tone" aria-hidden="true" style={flap ? `background: ${flap.tone}` : undefined} />
+                    <span class="strip__info">
+                      <span class="strip__n"><span class="visually-hidden">Volet </span>{i + 1}</span>
+                      <span class="strip__time">{flap?.label}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ))
+      }
+      <p class="tool__summary" id="strip-summary" aria-live="polite">{strip.summary}</p>
+      <p class="tool__text" id="strip-method">{strip.method}</p>
+      <p class="hint" id="strip-hint" hidden={strip.hints.length === 0}>{strip.hints.join(' ')}</p>
+    </section>
+  </div>
+</LaboTool>
+
+<style>
+  .pass {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .strip {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .strip li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .strip__tone {
+    display: block;
+    aspect-ratio: 4 / 3;
+    border: 1px solid rgb(0 0 0 / 8%);
+    transition: background-color 0.4s ease;
+  }
+
+  .strip__info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .strip__n {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .strip__time {
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  /* Sur mobile, une case carrée et le temps seul, centré. */
+  @media (max-width: 640px) {
+    .strip {
+      gap: 6px;
+    }
+
+    .strip__tone {
+      aspect-ratio: 1;
+    }
+
+    .strip__info {
+      justify-content: center;
+    }
+
+    .strip__n {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .strip__time {
+      font-size: 15px;
+    }
+  }
+</style>
+
+<script>
+  import { computeStrip, DEFAULTS, type StripSettings } from '../../lib/labo/bande-test';
+  import { readNumber } from '../../lib/labo/math';
+  import { load, save } from '../../lib/labo/store';
+
+  const KEY = 'bande-test';
+  const form = document.querySelector<HTMLFormElement>('#strip-form')!;
+  const startInput = form.querySelector<HTMLInputElement>('#strip-start')!;
+  // Cases de chaque passage, lues une fois : le DOM ne change pas.
+  const passes = [...document.querySelectorAll<HTMLElement>('.pass')].map((el) => ({
+    el,
+    flaps: [...el.querySelectorAll('li')].map((li) => ({
+      tone: li.querySelector<HTMLElement>('.strip__tone')!,
+      time: li.querySelector<HTMLElement>('.strip__time')!,
+    })),
+  }));
+  const summary = document.querySelector<HTMLElement>('#strip-summary')!;
+  const method = document.querySelector<HTMLElement>('#strip-method')!;
+  const hint = document.querySelector<HTMLElement>('#strip-hint')!;
+
+  const checked = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value;
+
+  function restore() {
+    const stored = load<StripSettings>(KEY);
+    if (!stored) return;
+    if (typeof stored.start === 'number') startInput.value = String(stored.start);
+    for (const name of ['den', 'count', 'mode'] as const) {
+      const radio = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${stored[name]}"]`);
+      if (radio) radio.checked = true;
+    }
+  }
+
+  function update() {
+    const start = readNumber(startInput);
+    if (!(start > 0)) {
+      summary.textContent = 'Entre un temps de départ supérieur à 0.';
+      method.textContent = '';
+      hint.hidden = true;
+      // Pas de temps périmés sur la bande.
+      passes.forEach((pass) => (pass.el.hidden = true));
+      return;
+    }
+    const settings: StripSettings = {
+      start,
+      den: Number(checked('den') ?? DEFAULTS.den),
+      count: checked('count') === '6' ? 6 : 12,
+      mode: checked('mode') === 'cumul' ? 'cumul' : 'single',
+    };
+    save(KEY, settings);
+
+    const strip = computeStrip(settings);
+    passes.forEach((pass, p) => {
+      const flaps = strip.passes[p];
+      pass.el.hidden = !flaps;
+      if (!flaps) return;
+      pass.flaps.forEach((cell, i) => {
+        cell.tone.style.background = flaps[i].tone;
+        cell.time.textContent = flaps[i].label;
+      });
+    });
+    summary.textContent = strip.summary;
+    method.textContent = strip.method;
+    hint.hidden = strip.hints.length === 0;
+    hint.textContent = strip.hints.join(' ');
+  }
+
+  restore();
+  update();
+  form.addEventListener('input', update);
+  form.addEventListener('submit', (event) => event.preventDefault());
+</script>

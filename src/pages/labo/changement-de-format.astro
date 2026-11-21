@@ -1,0 +1,158 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { computeFormat, DEFAULTS, NEGATIVES } from '../../lib/labo/format';
+
+const result = computeFormat(DEFAULTS);
+const [fromPrint, toPrint] = result.prints;
+---
+
+<LaboTool id="changement-de-format">
+  <div class="tool">
+    <form class="tool__form format-form" id="format-form">
+      <label class="field">
+        <span class="field__label">Négatif</span>
+        <select class="input" name="negative">
+          {NEGATIVES.map((neg) => <option value={neg.id} selected={neg.id === DEFAULTS.negative}>{neg.label}</option>)}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">Temps actuel (s)</span>
+        <input class="input" name="time" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.time} />
+      </label>
+      <label class="field">
+        <span class="field__label">Grand côté actuel (cm)</span>
+        <input class="input" name="from" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.from} />
+      </label>
+      <label class="field">
+        <span class="field__label">Nouveau grand côté (cm)</span>
+        <input class="input input--strong" name="to" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.to} />
+      </label>
+    </form>
+
+    <section class="tool__result">
+      <div class="result" aria-live="polite">
+        <span class="result__label">Nouveau temps, même diaphragme</span>
+        <output class="result__value" id="format-time" form="format-form">{result.time}</output>
+        <span class="format__comparison" id="format-comparison">{result.comparison}</span>
+        <span class="result__detail" id="format-aperture">{result.aperture}</span>
+      </div>
+
+      <div class="sizes" aria-hidden="true">
+        <span class="sizes__print" id="format-from" style={`width: ${fromPrint.width}; aspect-ratio: ${fromPrint.aspect}`}>{fromPrint.label}</span>
+        <span class="sizes__print sizes__print--new" id="format-to" style={`width: ${toPrint.width}; aspect-ratio: ${toPrint.aspect}`}>{toPrint.label}</span>
+      </div>
+    </section>
+  </div>
+</LaboTool>
+
+<style>
+  .format-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 16px;
+  }
+
+  .format-form .input {
+    width: 100%;
+  }
+
+  .input--strong {
+    border-color: var(--fg);
+  }
+
+  .format__comparison {
+    font-family: var(--font-mono);
+    font-size: 15px;
+  }
+
+  .result__detail {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* Les deux tirages à l'échelle, posés sur le plateau. */
+  .sizes {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px;
+    background: var(--soft);
+  }
+
+  .sizes__print {
+    flex: none;
+    display: flex;
+    align-items: flex-end;
+    padding: 6px;
+    background: var(--bg);
+    border: 1px solid var(--field-line);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    transition: width 0.3s ease;
+  }
+
+  .sizes__print--new {
+    border-color: var(--fg);
+    color: var(--fg);
+  }
+</style>
+
+<script>
+  import { computeFormat, type FormatSettings } from '../../lib/labo/format';
+  import { readNumber } from '../../lib/labo/math';
+  import { load, save } from '../../lib/labo/store';
+
+  const KEY = 'format';
+  const form = document.querySelector<HTMLFormElement>('#format-form')!;
+  const negative = form.querySelector<HTMLSelectElement>('select[name="negative"]')!;
+  // Champs lus une fois : le DOM ne change pas.
+  const FIELDS = ['time', 'from', 'to'] as const;
+  const inputs = new Map(FIELDS.map((name) => [name, form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
+  const timeOut = document.querySelector<HTMLOutputElement>('#format-time')!;
+  const comparison = document.querySelector<HTMLElement>('#format-comparison')!;
+  const aperture = document.querySelector<HTMLElement>('#format-aperture')!;
+  const boxes = [document.querySelector<HTMLElement>('#format-from')!, document.querySelector<HTMLElement>('#format-to')!];
+
+  function restore() {
+    const stored = load<FormatSettings>(KEY);
+    if (!stored) return;
+    if ([...negative.options].some((option) => option.value === stored.negative)) negative.value = stored.negative;
+    for (const name of FIELDS) {
+      if (typeof stored[name] === 'number') input(name).value = String(stored[name]);
+    }
+  }
+
+  function update() {
+    const settings: FormatSettings = {
+      negative: negative.value,
+      time: readNumber(input('time')),
+      from: readNumber(input('from')),
+      to: readNumber(input('to')),
+    };
+    if (!(settings.time > 0 && settings.from > 0 && settings.to > 0)) {
+      timeOut.textContent = '–';
+      comparison.textContent = 'Remplis les valeurs avec des nombres supérieurs à 0.';
+      aperture.textContent = '';
+      return;
+    }
+    save(KEY, settings);
+
+    const result = computeFormat(settings);
+    timeOut.textContent = result.time;
+    comparison.textContent = result.comparison;
+    aperture.textContent = result.aperture;
+    boxes.forEach((box, i) => {
+      box.style.width = result.prints[i].width;
+      box.style.aspectRatio = result.prints[i].aspect;
+      box.textContent = result.prints[i].label;
+    });
+  }
+
+  restore();
+  update();
+  form.addEventListener('input', update);
+  form.addEventListener('submit', (event) => event.preventDefault());
+</script>

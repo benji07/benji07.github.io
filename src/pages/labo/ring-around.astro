@@ -1,0 +1,239 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { CHANNEL_FIELDS as channels, MAX } from '../../lib/labo/durst';
+import { describe, grid } from '../../lib/labo/ring-around';
+
+// Valeurs par défaut ; le script reprend le réglage mémorisé par les outils couleur.
+const from = { y: 60, m: 45, c: 0 };
+const time = 14;
+const selected = 'magenta-1';
+const cells = grid();
+const result = describe(selected, from, time);
+---
+
+<LaboTool id="ring-around">
+  <form class="tool" id="ring-form">
+    <fieldset class="field ring-field">
+      <legend class="field__label">Le tirage ressemble à…</legend>
+      <div class="ring">
+        {
+          cells.map((tile) =>
+            tile ? (
+              <label class="tile" title={tile.name}>
+                <input type="radio" name="cast" value={tile.value} checked={tile.value === selected} aria-label={tile.name} />
+                <span class="tile__print" aria-hidden="true">
+                  {tile.bands.map((band) => (
+                    <span style={`background: ${band}`} />
+                  ))}
+                </span>
+                <span class="tile__label" aria-hidden="true">{tile.label}</span>
+              </label>
+            ) : (
+              <span aria-hidden="true" />
+            ),
+          )
+        }
+      </div>
+    </fieldset>
+
+    <div class="tool__result">
+      <fieldset class="field">
+        <legend class="filters__title">
+          <span>Réglage de ce tirage</span>
+          <span class="filters__note">repris de la page Durst</span>
+        </legend>
+        <div class="filters">
+          {
+            channels.map((ch) => (
+              <label class="field">
+                <span class="field__label">{ch.label}</span>
+                <input class={`input input--${ch.key}`} name={ch.key} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={from[ch.key]} />
+              </label>
+            ))
+          }
+          <label class="field">
+            <span class="field__label">Temps (s)</span>
+            <input class="input" name="time" type="text" inputmode="decimal" autocomplete="off" value={time} />
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="result" aria-live="polite">
+        <span class="result__label" id="ring-cast">{result.label}</span>
+        <span class="ring__changes" id="ring-changes">{result.changes}</span>
+        <ul class="chips" id="ring-chips" role="list">
+          {result.chips.map((chip, i) => <li class={`chip--${['y', 'm', 'c', 't'][i]}`}>{chip}</li>)}
+        </ul>
+        <span class="result__detail" id="ring-detail">{result.detail}</span>
+        <button class="button ring__apply" type="button" id="ring-apply">Partir de ce réglage</button>
+      </div>
+
+      <p class="tool__text">
+        Si un filtre devait passer sous 0, on ajoute plutôt les deux autres : retirer 5 de jaune revient à ajouter 5 de magenta et 5 de cyan.
+      </p>
+    </div>
+  </form>
+</LaboTool>
+
+<style>
+  /* Vignettes et réglage à parts égales ; empilés sur petit écran. */
+  .ring-field,
+  .ring-field + .tool__result {
+    flex: 1 1 400px;
+    min-width: 0;
+  }
+
+  .ring {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tile input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .tile:has(input:checked) {
+    border-color: var(--fg);
+  }
+
+  .tile:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .tile__print {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    aspect-ratio: 1;
+  }
+
+  .tile__label {
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .tile:has(input:checked) .tile__label {
+    font-weight: 600;
+  }
+
+  .ring__changes {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    white-space: pre-wrap;
+  }
+
+  .ring__apply {
+    align-self: flex-start;
+    margin-top: 6px;
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+
+  .ring__apply:hover {
+    background: #2a2c31;
+    color: #ffffff;
+  }
+
+  @media (max-width: 640px) {
+    .ring {
+      gap: 4px;
+    }
+
+    .tile {
+      padding: 2px;
+    }
+
+    .tile__label {
+      font-size: 11px;
+    }
+  }
+</style>
+
+<script>
+  import { CHANNELS, dial, loadSetting, saveSetting, type Filtration } from '../../lib/labo/durst';
+  import { readNumber, roundTime } from '../../lib/labo/math';
+  import { describe } from '../../lib/labo/ring-around';
+
+  const form = document.querySelector<HTMLFormElement>('#ring-form')!;
+  // Champs lus une fois : le DOM ne change pas.
+  const FIELDS = [...CHANNELS, 'time'] as const;
+  const inputs = new Map(FIELDS.map((name) => [name, form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
+  const castOut = document.querySelector<HTMLElement>('#ring-cast')!;
+  const changesOut = document.querySelector<HTMLElement>('#ring-changes')!;
+  const chips = [...document.querySelectorAll<HTMLElement>('#ring-chips li')];
+  const detail = document.querySelector<HTMLElement>('#ring-detail')!;
+  const apply = document.querySelector<HTMLButtonElement>('#ring-apply')!;
+
+  let next: { filtration: Filtration; time: number } | undefined;
+
+  function restore() {
+    const setting = loadSetting();
+    if (!setting) return;
+    for (const ch of CHANNELS) input(ch).value = String(setting[ch]);
+    input('time').value = String(setting.time);
+  }
+
+  // Les molettes vont de 0 à 130 par crans de 1 : on calcule sur ce qui se règle.
+  const filtration = (): Filtration => ({ y: dial(readNumber(input('y'))), m: dial(readNumber(input('m'))), c: dial(readNumber(input('c'))) });
+
+  function update(event?: Event) {
+    const from = filtration();
+    const time = readNumber(input('time'));
+    const value = form.querySelector<HTMLInputElement>('input[name="cast"]:checked')?.value ?? 'neutre';
+    const result = describe(value, from, time);
+
+    castOut.textContent = result.label;
+    changesOut.textContent = result.changes;
+    chips.forEach((chip, i) => (chip.textContent = result.chips[i]));
+    detail.textContent = result.detail;
+    next = result.t === undefined ? undefined : { filtration: result.correction.filtration, time: result.t };
+    apply.hidden = !next || result.correction.changes.length === 0;
+
+    // Seul le réglage du tirage est partagé, pas le choix de la vignette.
+    const target = event?.target as HTMLInputElement | undefined;
+    if (target && target.name !== 'cast' && time > 0) saveSetting(from, time);
+  }
+
+  // Le tirage corrigé devient le nouveau point de départ.
+  apply.addEventListener('click', () => {
+    if (!next) return;
+    for (const ch of CHANNELS) input(ch).value = String(next.filtration[ch]);
+    input('time').value = String(roundTime(next.time));
+    saveSetting(next.filtration, next.time);
+    const neutral = form.querySelector<HTMLInputElement>('input[value="neutre"]')!;
+    neutral.checked = true;
+    update();
+    // Le bouton disparaît : le focus passe sur la vignette neutre.
+    neutral.focus();
+  });
+
+  restore();
+  update();
+  form.addEventListener('input', update);
+  // En fin de saisie, les champs affichent la valeur utilisée pour le calcul.
+  form.addEventListener('change', (event) => {
+    const f = filtration();
+    for (const ch of CHANNELS) input(ch).value = String(f[ch]);
+    update(event);
+  });
+  form.addEventListener('submit', (event) => event.preventDefault());
+</script>

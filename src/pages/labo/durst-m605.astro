@@ -1,0 +1,259 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { CHANNEL_FIELDS as channels, describe, FACTORS, MAX, STEP } from '../../lib/labo/durst';
+import { formatNumber } from '../../lib/labo/math';
+
+// Valeurs par défaut : l'exemple 1 de la notice (20/10/00 à 10 s → 20/40/00).
+const from = { y: 20, m: 10, c: 0 };
+const to = { y: 20, m: 40, c: 0 };
+const time = 10;
+const target = 20;
+const result = describe(time, from, to, target);
+
+const pad = (v: number) => String(v).padStart(2, '0');
+const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FACTORS.m[i], c: FACTORS.c[i] }));
+---
+
+<LaboTool id="durst-m605">
+  <div class="tool">
+    <form class="tool__form" id="durst-form">
+      <fieldset class="field">
+        <legend class="filters__title">
+          <span>Bande test</span>
+          <span class="filters__note">mémorisé</span>
+        </legend>
+        <div class="filters">
+          {
+            channels.map((ch) => (
+              <label class="field">
+                <span class="field__label">{ch.label}</span>
+                <input class={`input input--${ch.key}`} name={`o${ch.key}`} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={from[ch.key]} />
+              </label>
+            ))
+          }
+          <label class="field">
+            <span class="field__label">Temps (s)</span>
+            <input class="input" name="time" type="text" inputmode="decimal" autocomplete="off" value={time} />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="filters__title"><span>Nouveau réglage</span></legend>
+        <div class="filters">
+          {
+            channels.map((ch) => (
+              <label class="field">
+                <span class="field__label">{ch.label}</span>
+                <input class={`input input--${ch.key}`} name={`n${ch.key}`} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={to[ch.key]} />
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+    </form>
+
+    <section class="tool__result">
+      <div class="result" aria-live="polite">
+        <span class="result__label">Nouveau temps</span>
+        <output class="result__value" id="durst-time" form="durst-form">{result.time}</output>
+        <span class="result__detail" id="durst-detail">{result.detail}</span>
+      </div>
+
+      <div class="box">
+        <p class="box__title">Allonger le temps sans changer la couleur</p>
+        <p class="tool__text">Temps trop court pour masquer ? On ajoute la même valeur aux trois filtres : c'est du gris neutre.</p>
+        <div class="field">
+          <label class="field__label" for="durst-target">Temps visé</label>
+          <div class="field__unit">
+            <input class="input" id="durst-target" name="target" form="durst-form" type="text" inputmode="decimal" autocomplete="off" value={target} />
+            <span>s</span>
+          </div>
+        </div>
+        <ul class="chips" id="durst-neutral" role="list">
+          {result.chips.map((chip, i) => <li class={`chip--${['y', 'm', 'c', 't'][i]}`}>{chip}</li>)}
+        </ul>
+        <p class="tool__text" id="durst-neutral-note">{result.note}</p>
+      </div>
+
+      <details class="more">
+        <summary>Table des facteurs de la notice</summary>
+        <div class="factors">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Filtre</th>
+                <th scope="col" class="col-y">Y</th>
+                <th scope="col" class="col-m">M</th>
+                <th scope="col" class="col-c">C</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                rows.map((row) => (
+                  <tr data-value={row.value}>
+                    <th scope="row">{pad(row.value)}</th>
+                    <td data-ch="y">{formatNumber(row.y)}</td>
+                    <td data-ch="m">{formatNumber(row.m)}</td>
+                    <td data-ch="c">{formatNumber(row.c)}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="tool__text">Surlignées : les lignes les plus proches des réglages en cours.</p>
+      </details>
+    </section>
+  </div>
+</LaboTool>
+
+<style>
+  .factors {
+    margin: 12px 0;
+    max-width: 360px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+    font-weight: 400;
+  }
+
+  thead th {
+    border-bottom: 1px solid var(--fg);
+  }
+
+  th[scope='row'],
+  thead th:first-child {
+    text-align: left;
+    color: var(--muted);
+  }
+
+  .col-y {
+    box-shadow: inset 0 -4px 0 var(--filter-y);
+  }
+
+  .col-m {
+    box-shadow: inset 0 -4px 0 var(--filter-m);
+  }
+
+  .col-c {
+    box-shadow: inset 0 -4px 0 var(--filter-c);
+  }
+
+  td.is-used {
+    background: var(--fg);
+    color: #ffffff;
+  }
+</style>
+
+<script>
+  import { CHANNELS, describe, dial, loadSetting, saveSetting, STEP, type Filtration } from '../../lib/labo/durst';
+  import { readNumber } from '../../lib/labo/math';
+  import { load, save } from '../../lib/labo/store';
+
+  const KEY = 'durst';
+  const FIELDS = ['oy', 'om', 'oc', 'time', 'ny', 'nm', 'nc', 'target'] as const;
+  type State = Record<(typeof FIELDS)[number], number> & { at: number };
+
+  const form = document.querySelector<HTMLFormElement>('#durst-form')!;
+  // Champs lus une fois : le DOM ne change pas.
+  const inputs = new Map(FIELDS.map((name) => [name, document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
+  const timeOut = document.querySelector<HTMLOutputElement>('#durst-time')!;
+  const detail = document.querySelector<HTMLElement>('#durst-detail')!;
+  const chips = [...document.querySelectorAll<HTMLElement>('#durst-neutral li')];
+  const neutralNote = document.querySelector<HTMLElement>('#durst-neutral-note')!;
+
+  // Reprend la page dans l'état où on l'a laissée ; si le ring-around a
+  // changé le réglage depuis, il devient la nouvelle bande test.
+  function restore() {
+    const state = load<State>(KEY);
+    const setting = loadSetting();
+    if (state) {
+      for (const name of FIELDS) if (typeof state[name] === 'number') input(name).value = String(state[name]);
+    }
+    if (setting && (!state || setting.at > (state.at ?? 0))) {
+      for (const ch of CHANNELS) {
+        input(`o${ch}`).value = String(setting[ch]);
+        input(`n${ch}`).value = String(setting[ch]);
+      }
+      input('time').value = String(setting.time);
+    }
+  }
+
+  // Les molettes vont de 0 à 130 par crans de 1 : on calcule sur ce qui se règle.
+  const filtration = (prefix: 'o' | 'n'): Filtration => ({
+    y: dial(readNumber(input(`${prefix}y`))),
+    m: dial(readNumber(input(`${prefix}m`))),
+    c: dial(readNumber(input(`${prefix}c`))),
+  });
+
+  // En fin de saisie, le champ affiche la valeur utilisée pour le calcul.
+  function normalize() {
+    for (const prefix of ['o', 'n'] as const) {
+      const f = filtration(prefix);
+      for (const ch of CHANNELS) input(`${prefix}${ch}`).value = String(f[ch]);
+    }
+  }
+
+  function highlight(from: Filtration, to: Filtration) {
+    document.querySelectorAll('td.is-used').forEach((td) => td.classList.remove('is-used'));
+    for (const f of [from, to]) {
+      for (const ch of CHANNELS) {
+        const row = Math.round(f[ch] / STEP) * STEP;
+        document.querySelector(`tr[data-value="${row}"] td[data-ch="${ch}"]`)?.classList.add('is-used');
+      }
+    }
+  }
+
+  function update(event?: Event) {
+    const from = filtration('o');
+    const to = filtration('n');
+    const time = readNumber(input('time'));
+    const target = readNumber(input('target'));
+    highlight(from, to);
+
+    if (!(time > 0)) {
+      timeOut.textContent = '–';
+      detail.textContent = 'Entre le temps de la bande test.';
+      chips.forEach((chip) => (chip.textContent = '–'));
+      neutralNote.textContent = '';
+      return;
+    }
+
+    const result = describe(time, from, to, target);
+    timeOut.textContent = result.time;
+    detail.textContent = result.detail;
+    chips.forEach((chip, i) => (chip.textContent = result.chips[i]));
+    neutralNote.textContent = result.note;
+
+    // Seule une saisie compte comme une modification : ouvrir la page ne
+    // doit pas prendre la main sur le réglage partagé.
+    if (!event) return;
+    const at = Date.now();
+    const state = { at } as State;
+    for (const name of FIELDS) state[name] = readNumber(input(name));
+    save(KEY, state);
+    saveSetting(to, result.t, at);
+  }
+
+  restore();
+  update();
+  form.addEventListener('input', update);
+  form.addEventListener('change', () => {
+    normalize();
+    update(new Event('change'));
+  });
+  form.addEventListener('submit', (event) => event.preventDefault());
+</script>

@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLaboTools, getPage } from '../../lib/content';
+import '../../styles/labo.css';
+
+const page = await getPage('labo');
+const tools = await getLaboTools();
+
+// Regroupe les outils par section, dans l'ordre du premier outil de chacune.
+const sections = Map.groupBy(tools, (tool) => tool.data.section);
+---
+
+<BaseLayout title={page.title} description={page.description} current="labo">
+  <main class="labo-index">
+    <header class="labo__head">
+      <h1 class="title title--l">{page.title}</h1>
+      <div class="prose"><page.Content /></div>
+    </header>
+
+    {
+      [...sections].map(([section, list]) => (
+        <section class="group">
+          <h2 class="label-s">{section}</h2>
+          <ul class="tools" role="list">
+            {list.map((tool) => (
+              <li>
+                <a href={`/labo/${tool.id}/`}>
+                  <span class="tools__title">
+                    {tool.data.title} <span aria-hidden="true">→</span>
+                  </span>
+                  <span class="tools__summary">{tool.data.summary}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .labo-index {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-page);
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-label);
+  }
+
+  /* Cartes séparées par des filets ; une carte par ligne sur mobile. */
+  .tools {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .tools a {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .tools a:hover .tools__title {
+    text-decoration: underline;
+  }
+
+  .tools__title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .tools__summary {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  @media (max-width: 640px) {
+    .tools a {
+      padding: 18px 16px;
+    }
+  }
+</style>
