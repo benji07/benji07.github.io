@@ -17,20 +17,20 @@ const [fromPrint, toPrint] = result.prints;
       </label>
       <label class="field">
         <span class="field__label">Temps actuel (s)</span>
-        <input class="input" name="time" type="number" inputmode="decimal" min="0.5" step="any" value={DEFAULTS.time} />
+        <input class="input" name="time" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.time} />
       </label>
       <label class="field">
         <span class="field__label">Grand côté actuel (cm)</span>
-        <input class="input" name="from" type="number" inputmode="decimal" min="5" step="any" value={DEFAULTS.from} />
+        <input class="input" name="from" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.from} />
       </label>
       <label class="field">
         <span class="field__label">Nouveau grand côté (cm)</span>
-        <input class="input input--strong" name="to" type="number" inputmode="decimal" min="5" step="any" value={DEFAULTS.to} />
+        <input class="input input--strong" name="to" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.to} />
       </label>
     </form>
 
-    <section class="tool__result" aria-live="polite">
-      <div class="result">
+    <section class="tool__result">
+      <div class="result" aria-live="polite">
         <span class="result__label">Nouveau temps, même diaphragme</span>
         <output class="result__value" id="format-time" form="format-form">{result.time}</output>
         <span class="format__comparison" id="format-comparison">{result.comparison}</span>
@@ -38,8 +38,8 @@ const [fromPrint, toPrint] = result.prints;
       </div>
 
       <div class="sizes" aria-hidden="true">
-        <span class="sizes__print" id="format-from" style={`width: ${fromPrint.width}`}>{fromPrint.label}</span>
-        <span class="sizes__print sizes__print--new" id="format-to" style={`width: ${toPrint.width}`}>{toPrint.label}</span>
+        <span class="sizes__print" id="format-from" style={`width: ${fromPrint.width}; aspect-ratio: ${fromPrint.aspect}`}>{fromPrint.label}</span>
+        <span class="sizes__print sizes__print--new" id="format-to" style={`width: ${toPrint.width}; aspect-ratio: ${toPrint.aspect}`}>{toPrint.label}</span>
       </div>
     </section>
   </div>
@@ -82,8 +82,6 @@ const [fromPrint, toPrint] = result.prints;
 
   .sizes__print {
     flex: none;
-    max-width: calc(50% - 8px);
-    aspect-ratio: 4 / 3;
     display: flex;
     align-items: flex-end;
     padding: 6px;
@@ -148,6 +146,7 @@ const [fromPrint, toPrint] = result.prints;
     aperture.textContent = result.aperture;
     boxes.forEach((box, i) => {
       box.style.width = result.prints[i].width;
+      box.style.aspectRatio = result.prints[i].aspect;
       box.textContent = result.prints[i].label;
     });
   }
