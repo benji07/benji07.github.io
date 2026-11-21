@@ -182,6 +182,7 @@ legend.field__label {
   margin: 0;
   font-family: var(--font-mono);
   font-size: 13px;
+  font-weight: 400;
   color: var(--muted);
 }
 
@@ -287,11 +288,6 @@ legend.field__label {
   background: var(--fg);
   color: #ffffff;
   font-weight: 600;
-}
-
-.result .chips .chip--t {
-  background: #ffffff;
-  color: var(--fg);
 }
 
 /* Bloc secondaire encadré. */

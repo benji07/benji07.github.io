@@ -1,24 +1,17 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import { FACTORS, newTime, neutralFor, product } from '../../lib/labo/durst';
-import { formatNumber, formatTime } from '../../lib/labo/math';
+import { CHANNEL_FIELDS as channels, describe, FACTORS, MAX, STEP } from '../../lib/labo/durst';
+import { formatNumber } from '../../lib/labo/math';
 
 // Valeurs par défaut : l'exemple 1 de la notice (20/10/00 à 10 s → 20/40/00).
 const from = { y: 20, m: 10, c: 0 };
 const to = { y: 20, m: 40, c: 0 };
 const time = 10;
 const target = 20;
-const t = newTime(time, from, to);
-const factor = product(to) / product(from);
-const neutral = neutralFor(t, to, target);
+const result = describe(time, from, to, target);
 
 const pad = (v: number) => String(v).padStart(2, '0');
-const rows = FACTORS.y.map((_, i) => ({ value: i * 5, y: FACTORS.y[i], m: FACTORS.m[i], c: FACTORS.c[i] }));
-const channels = [
-  { key: 'y', label: 'Jaune' },
-  { key: 'm', label: 'Magenta' },
-  { key: 'c', label: 'Cyan' },
-] as const;
+const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FACTORS.m[i], c: FACTORS.c[i] }));
 ---
 
 <LaboTool id="durst-m605">
@@ -34,7 +27,7 @@ const channels = [
             channels.map((ch) => (
               <label class="field">
                 <span class="field__label">{ch.label}</span>
-                <input class={`input input--${ch.key}`} name={`o${ch.key}`} type="number" inputmode="numeric" min="0" max="130" step="1" value={from[ch.key]} />
+                <input class={`input input--${ch.key}`} name={`o${ch.key}`} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={from[ch.key]} />
               </label>
             ))
           }
@@ -52,7 +45,7 @@ const channels = [
             channels.map((ch) => (
               <label class="field">
                 <span class="field__label">{ch.label}</span>
-                <input class={`input input--${ch.key}`} name={`n${ch.key}`} type="number" inputmode="numeric" min="0" max="130" step="1" value={to[ch.key]} />
+                <input class={`input input--${ch.key}`} name={`n${ch.key}`} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={to[ch.key]} />
               </label>
             ))
           }
@@ -63,10 +56,8 @@ const channels = [
     <section class="tool__result" aria-live="polite">
       <div class="result">
         <span class="result__label">Nouveau temps</span>
-        <output class="result__value" id="durst-time" form="durst-form">{formatTime(t)} s</output>
-        <span class="result__detail" id="durst-detail">
-          calcul : {formatNumber(t)} s · × {formatNumber(factor, 3)} · +{formatNumber(Math.log2(factor))} stop
-        </span>
+        <output class="result__value" id="durst-time" form="durst-form">{result.time}</output>
+        <span class="result__detail" id="durst-detail">{result.detail}</span>
       </div>
 
       <div class="box">
@@ -80,14 +71,9 @@ const channels = [
           </div>
         </div>
         <ul class="chips" id="durst-neutral" role="list">
-          <li class="chip--y">Y {neutral?.filtration.y ?? '–'}</li>
-          <li class="chip--m">M {neutral?.filtration.m ?? '–'}</li>
-          <li class="chip--c">C {neutral?.filtration.c ?? '–'}</li>
-          <li class="chip--t">{neutral ? `${formatTime(neutral.time)} s` : '–'}</li>
+          {result.chips.map((chip, i) => <li class={`chip--${['y', 'm', 'c', 't'][i]}`}>{chip}</li>)}
         </ul>
-        <p class="tool__text" id="durst-neutral-note">
-          +{neutral?.added} sur chaque filtre. Refais une petite bande : le gris des filtres n'est jamais parfaitement neutre.
-        </p>
+        <p class="tool__text" id="durst-neutral-note">{result.note}</p>
       </div>
 
       <details class="more">
@@ -172,8 +158,8 @@ const channels = [
 </style>
 
 <script>
-  import { clamp, newTime, neutralFor, product, SETTING_KEY, type Filtration, type Setting } from '../../lib/labo/durst';
-  import { formatNumber, formatTime, readNumber, roundTime } from '../../lib/labo/math';
+  import { CHANNELS, clamp, describe, loadSetting, saveSetting, STEP, type Filtration } from '../../lib/labo/durst';
+  import { readNumber } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
   const KEY = 'durst';
@@ -181,7 +167,9 @@ const channels = [
   type State = Record<(typeof FIELDS)[number], number> & { at: number };
 
   const form = document.querySelector<HTMLFormElement>('#durst-form')!;
-  const input = (name: string) => document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+  // Champs lus une fois : le DOM ne change pas.
+  const inputs = new Map(FIELDS.map((name) => [name, document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
   const timeOut = document.querySelector<HTMLOutputElement>('#durst-time')!;
   const detail = document.querySelector<HTMLElement>('#durst-detail')!;
   const chips = [...document.querySelectorAll<HTMLElement>('#durst-neutral li')];
@@ -191,16 +179,16 @@ const channels = [
   // changé le réglage depuis, il devient la nouvelle bande test.
   function restore() {
     const state = load<State>(KEY);
-    const setting = load<Setting>(SETTING_KEY);
+    const setting = loadSetting();
     if (state) {
       for (const name of FIELDS) if (typeof state[name] === 'number') input(name).value = String(state[name]);
     }
-    if (setting && typeof setting.time === 'number' && (!state || (setting.at ?? 0) > (state.at ?? 0))) {
-      for (const ch of ['y', 'm', 'c'] as const) {
-        input(`o${ch}`).value = String(setting[ch] ?? 0);
-        input(`n${ch}`).value = String(setting[ch] ?? 0);
+    if (setting && (!state || setting.at > (state.at ?? 0))) {
+      for (const ch of CHANNELS) {
+        input(`o${ch}`).value = String(setting[ch]);
+        input(`n${ch}`).value = String(setting[ch]);
       }
-      input('time').value = String(roundTime(setting.time));
+      input('time').value = String(setting.time);
     }
   }
 
@@ -213,8 +201,8 @@ const channels = [
   function highlight(from: Filtration, to: Filtration) {
     document.querySelectorAll('td.is-used').forEach((td) => td.classList.remove('is-used'));
     for (const f of [from, to]) {
-      for (const ch of ['y', 'm', 'c'] as const) {
-        const row = Math.round(f[ch] / 5) * 5;
+      for (const ch of CHANNELS) {
+        const row = Math.round(f[ch] / STEP) * STEP;
         document.querySelector(`tr[data-value="${row}"] td[data-ch="${ch}"]`)?.classList.add('is-used');
       }
     }
@@ -233,29 +221,17 @@ const channels = [
       return;
     }
 
-    const t = newTime(time, from, to);
-    const factor = product(to) / product(from);
-    const stops = Math.log2(factor);
-    timeOut.textContent = `${formatTime(t)} s`;
-    detail.textContent = `calcul : ${formatNumber(t)} s · × ${formatNumber(factor, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} stop`;
-
-    const neutral = target > 0 ? neutralFor(t, to, target) : undefined;
-    chips[0].textContent = `Y ${neutral?.filtration.y ?? '–'}`;
-    chips[1].textContent = `M ${neutral?.filtration.m ?? '–'}`;
-    chips[2].textContent = `C ${neutral?.filtration.c ?? '–'}`;
-    chips[3].textContent = neutral ? `${formatTime(neutral.time)} s` : '–';
-    neutralNote.textContent = neutral
-      ? `+${neutral.added} sur chaque filtre. Refais une petite bande : le gris des filtres n’est jamais parfaitement neutre.`
-      : target > 0 && target <= t
-        ? 'Le temps est déjà assez long.'
-        : 'Pas atteignable avec les molettes : ferme le diaphragme d’un cran, ou engage le filtre supplémentaire de la tête.';
+    const result = describe(time, from, to, target);
+    timeOut.textContent = result.time;
+    detail.textContent = result.detail;
+    chips.forEach((chip, i) => (chip.textContent = result.chips[i]));
+    neutralNote.textContent = result.note;
 
     const at = Date.now();
     const state = { at } as State;
     for (const name of FIELDS) state[name] = readNumber(input(name));
     save(KEY, state);
-    // On partage le temps tel qu'il se règle sur le compte-pose.
-    save<Setting>(SETTING_KEY, { ...to, time: roundTime(t), at });
+    saveSetting(to, result.t, at);
   }
 
   restore();

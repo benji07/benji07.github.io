@@ -243,6 +243,16 @@ h3 {
   font-weight: 500;
 }
 
+/* Texte réservé aux lecteurs d'écran. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .back {
   font-family: var(--font-mono);
   font-size: 13px;

@@ -1,21 +1,14 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import { newTime } from '../../lib/labo/durst';
-import { formatNumber, formatTime } from '../../lib/labo/math';
-import { correct, grid } from '../../lib/labo/ring-around';
+import { CHANNEL_FIELDS as channels, MAX } from '../../lib/labo/durst';
+import { describe, grid } from '../../lib/labo/ring-around';
 
 // Valeurs par défaut ; le script reprend le réglage mémorisé par les outils couleur.
 const from = { y: 60, m: 45, c: 0 };
 const time = 14;
 const selected = 'magenta-1';
 const cells = grid();
-const correction = correct(selected, from);
-const t = newTime(time, from, correction.filtration);
-const channels = [
-  { key: 'y', label: 'Jaune' },
-  { key: 'm', label: 'Magenta' },
-  { key: 'c', label: 'Cyan' },
-] as const;
+const result = describe(selected, from, time);
 ---
 
 <LaboTool id="ring-around">
@@ -54,7 +47,7 @@ const channels = [
             channels.map((ch) => (
               <label class="field">
                 <span class="field__label">{ch.label}</span>
-                <input class={`input input--${ch.key}`} name={ch.key} type="number" inputmode="numeric" min="0" max="130" step="1" value={from[ch.key]} />
+                <input class={`input input--${ch.key}`} name={ch.key} type="number" inputmode="numeric" min="0" max={MAX} step="1" value={from[ch.key]} />
               </label>
             ))
           }
@@ -66,15 +59,12 @@ const channels = [
       </fieldset>
 
       <div class="result" aria-live="polite">
-        <span class="result__label" id="ring-cast">Tirage magenta, léger</span>
-        <span class="ring__changes" id="ring-changes">{correction.changes.join('   ')}</span>
+        <span class="result__label" id="ring-cast">{result.label}</span>
+        <span class="ring__changes" id="ring-changes">{result.changes}</span>
         <ul class="chips" id="ring-chips" role="list">
-          <li class="chip--y">Y {correction.filtration.y}</li>
-          <li class="chip--m">M {correction.filtration.m}</li>
-          <li class="chip--c">C {correction.filtration.c}</li>
-          <li class="chip--t">{formatTime(t)} s</li>
+          {result.chips.map((chip, i) => <li class={`chip--${['y', 'm', 'c', 't'][i]}`}>{chip}</li>)}
         </ul>
-        <span class="result__detail" id="ring-detail">calcul : {formatNumber(t)} s, au lieu de {formatTime(time)} s</span>
+        <span class="result__detail" id="ring-detail">{result.detail}</span>
         <button class="button ring__apply" type="button" id="ring-apply">Partir de ce réglage</button>
       </div>
 
@@ -178,13 +168,15 @@ const channels = [
 </style>
 
 <script>
-  import { clamp, newTime, SETTING_KEY, type Filtration, type Setting } from '../../lib/labo/durst';
-  import { formatNumber, formatTime, readNumber, roundTime } from '../../lib/labo/math';
-  import { correct } from '../../lib/labo/ring-around';
-  import { load, save } from '../../lib/labo/store';
+  import { CHANNELS, clamp, loadSetting, saveSetting, type Filtration } from '../../lib/labo/durst';
+  import { readNumber, roundTime } from '../../lib/labo/math';
+  import { describe } from '../../lib/labo/ring-around';
 
   const form = document.querySelector<HTMLFormElement>('#ring-form')!;
-  const input = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+  // Champs lus une fois : le DOM ne change pas.
+  const FIELDS = [...CHANNELS, 'time'] as const;
+  const inputs = new Map(FIELDS.map((name) => [name, form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!]));
+  const input = (name: (typeof FIELDS)[number]) => inputs.get(name)!;
   const castOut = document.querySelector<HTMLElement>('#ring-cast')!;
   const changesOut = document.querySelector<HTMLElement>('#ring-changes')!;
   const chips = [...document.querySelectorAll<HTMLElement>('#ring-chips li')];
@@ -194,49 +186,36 @@ const channels = [
   let next: { filtration: Filtration; time: number } | undefined;
 
   function restore() {
-    const setting = load<Setting>(SETTING_KEY);
-    if (!setting || typeof setting.time !== 'number') return;
-    for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(setting[ch] ?? 0);
-    input('time').value = String(roundTime(setting.time));
+    const setting = loadSetting();
+    if (!setting) return;
+    for (const ch of CHANNELS) input(ch).value = String(setting[ch]);
+    input('time').value = String(setting.time);
   }
 
   function update(event?: Event) {
     const from = { y: clamp(readNumber(input('y'))), m: clamp(readNumber(input('m'))), c: clamp(readNumber(input('c'))) };
     const time = readNumber(input('time'));
     const value = form.querySelector<HTMLInputElement>('input[name="cast"]:checked')?.value ?? 'neutre';
-    const correction = correct(value, from);
+    const result = describe(value, from, time);
 
-    castOut.textContent = correction.cast
-      ? `Tirage ${correction.cast.label.toLowerCase()}, ${correction.level === 1 ? 'léger' : 'fort'}`
-      : 'Tirage neutre';
-    changesOut.textContent = correction.changes.length ? correction.changes.join('   ') : 'Rien à changer';
-    chips[0].textContent = `Y ${correction.filtration.y}`;
-    chips[1].textContent = `M ${correction.filtration.m}`;
-    chips[2].textContent = `C ${correction.filtration.c}`;
-
-    if (time > 0) {
-      const t = newTime(time, from, correction.filtration);
-      chips[3].textContent = `${formatTime(t)} s`;
-      detail.textContent = `calcul : ${formatNumber(t)} s, au lieu de ${formatTime(time)} s`;
-      next = { filtration: correction.filtration, time: t };
-    } else {
-      chips[3].textContent = '–';
-      detail.textContent = 'Entre le temps de ce tirage.';
-      next = undefined;
-    }
-    apply.hidden = !next || correction.changes.length === 0;
+    castOut.textContent = result.label;
+    changesOut.textContent = result.changes;
+    chips.forEach((chip, i) => (chip.textContent = result.chips[i]));
+    detail.textContent = result.detail;
+    next = result.t === undefined ? undefined : { filtration: result.correction.filtration, time: result.t };
+    apply.hidden = !next || result.correction.changes.length === 0;
 
     // Seul le réglage du tirage est partagé, pas le choix de la vignette.
     const target = event?.target as HTMLInputElement | undefined;
-    if (target && target.name !== 'cast' && time > 0) save<Setting>(SETTING_KEY, { ...from, time, at: Date.now() });
+    if (target && target.name !== 'cast' && time > 0) saveSetting(from, time);
   }
 
   // Le tirage corrigé devient le nouveau point de départ.
   apply.addEventListener('click', () => {
     if (!next) return;
-    for (const ch of ['y', 'm', 'c'] as const) input(ch).value = String(next.filtration[ch]);
+    for (const ch of CHANNELS) input(ch).value = String(next.filtration[ch]);
     input('time').value = String(roundTime(next.time));
-    save<Setting>(SETTING_KEY, { ...next.filtration, time: roundTime(next.time), at: Date.now() });
+    saveSetting(next.filtration, next.time);
     form.querySelector<HTMLInputElement>('input[value="neutre"]')!.checked = true;
     update();
   });
