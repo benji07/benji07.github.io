@@ -172,8 +172,8 @@ legend.field__label {
 .hint {
   margin: 0;
   padding: 12px 14px;
-  background: #fff6d6;
-  color: #4d3b00;
+  border-left: 3px solid var(--fg);
+  color: var(--fg);
   font-size: 15px;
   line-height: 1.5;
 }
