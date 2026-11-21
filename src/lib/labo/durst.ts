@@ -2,10 +2,18 @@
 // filtres, d'après la table de la notice (p. 16, « Filter factors »).
 //
 //   T(nouveau) = T(ancien) × (F1 × F2 × F3) nouveau ÷ (F1 × F2 × F3) ancien
-import { formatNumber, formatTime, stopWord } from './math';
+import { formatNumber, formatTime, roundTime, stopWord } from './math';
+import { load, save } from './store';
 
 export const CHANNELS = ['y', 'm', 'c'] as const;
 export type Channel = (typeof CHANNELS)[number];
+
+/** Libellés des champs, dans l'ordre de CHANNELS. */
+export const CHANNEL_FIELDS = [
+  { key: 'y', label: 'Jaune' },
+  { key: 'm', label: 'Magenta' },
+  { key: 'c', label: 'Cyan' },
+] as const;
 
 export interface Filtration {
   y: number;
@@ -110,3 +118,15 @@ export interface Setting extends Filtration {
 }
 
 export const SETTING_KEY = 'reglage';
+
+/** Réglage partagé, ou undefined s'il n'y en a pas de valide. */
+export function loadSetting(): Setting | undefined {
+  const setting = load<Setting>(SETTING_KEY);
+  if (!setting || typeof setting.time !== 'number') return undefined;
+  return { y: setting.y ?? 0, m: setting.m ?? 0, c: setting.c ?? 0, time: roundTime(setting.time), at: setting.at ?? 0 };
+}
+
+/** Partage un réglage, avec le temps tel qu'il se règle sur le compte-pose. */
+export function saveSetting({ y, m, c }: Filtration, time: number, at = Date.now()) {
+  save<Setting>(SETTING_KEY, { y, m, c, time: roundTime(time), at });
+}

@@ -4,7 +4,8 @@
 // Tirage d'après négatif : une dominante se neutralise avec un filtre de la
 // même couleur (règle 1 de la notice Durst). La correction se fait en jaune
 // et magenta ; le cyan déjà réglé (gris pour allonger le temps) est gardé.
-import { clamp, type Filtration } from './durst';
+import { CHANNELS, clamp, newTime, type Filtration } from './durst';
+import { formatNumber, formatTime } from './math';
 
 export interface Cast {
   id: string;
@@ -28,10 +29,16 @@ export const CASTS: Cast[] = [
   { id: 'vert', label: 'Vert', color: '#2e9a3a', y: 0, m: -1, cells: [[1, 1], [0, 0]] },
 ];
 
-/** Correction en valeurs Durst pour une dominante légère (1) ou forte (2). */
-export const AMOUNTS = { 1: 5, 2: 10 } as const;
+/**
+ * Dominante légère (1) ou forte (2) : correction en valeurs Durst, teinte
+ * des vignettes (% de la couleur mélangée au gris) et libellés.
+ */
+export const LEVELS = {
+  1: { amount: 5, mix: 16, adj: 'léger', adjF: 'légère' },
+  2: { amount: 10, mix: 34, adj: 'fort', adjF: 'forte' },
+} as const;
 
-export type Level = keyof typeof AMOUNTS;
+export type Level = keyof typeof LEVELS;
 
 export interface Tile {
   /** « neutre » ou « <dominante>-<intensité> » : valeur du bouton radio. */
@@ -44,7 +51,6 @@ export interface Tile {
 }
 
 const GREYS = ['#e9e9e9', '#9a9a9a', '#4a4a4a'];
-const MIX = { 1: 16, 2: 34 } as const;
 
 /** Les 25 cases de la grille, vides (null) ou occupées par une vignette. */
 export function grid(): (Tile | null)[] {
@@ -52,12 +58,12 @@ export function grid(): (Tile | null)[] {
   cells[12] = { value: 'neutre', label: 'Neutre', name: 'Tirage neutre', bands: GREYS };
   for (const cast of CASTS) {
     cast.cells.forEach(([row, col], i) => {
-      const level = (i + 1) as Level;
+      const level = LEVELS[(i + 1) as Level];
       cells[row * 5 + col] = {
-        value: `${cast.id}-${level}`,
-        label: `${cast.label} ${AMOUNTS[level]}`,
-        name: `Dominante ${cast.label.toLowerCase()} ${level === 1 ? 'légère' : 'forte'}`,
-        bands: GREYS.map((grey) => `color-mix(in srgb, ${cast.color} ${MIX[level]}%, ${grey})`),
+        value: `${cast.id}-${i + 1}`,
+        label: `${cast.label} ${level.amount}`,
+        name: `Dominante ${cast.label.toLowerCase()} ${level.adjF}`,
+        bands: GREYS.map((grey) => `color-mix(in srgb, ${cast.color} ${level.mix}%, ${grey})`),
       };
     });
   }
@@ -78,30 +84,37 @@ export function correct(value: string, from: Filtration): Correction {
   const cast = CASTS.find((c) => c.id === id);
   if (!cast) return { filtration: { ...from }, changes: [] };
 
-  const level = (lvl === '2' ? 2 : 1) as Level;
-  const amount = AMOUNTS[level];
-  let y = from.y + cast.y * amount;
-  let m = from.m + cast.m * amount;
-  let c = from.c;
+  const level: Level = lvl === '2' ? 2 : 1;
+  const amount = LEVELS[level].amount;
+  const y = from.y + cast.y * amount;
+  const m = from.m + cast.m * amount;
 
   // Un filtre ne descend pas sous 0 : retirer du jaune revient à ajouter
-  // du magenta et du cyan, retirer du magenta à ajouter du jaune et du cyan.
-  if (y < 0) {
-    m += -y;
-    c += -y;
-    y = 0;
-  }
-  if (m < 0) {
-    y += -m;
-    c += -m;
-    m = 0;
-  }
-
-  const filtration = { y: clamp(y), m: clamp(m), c: clamp(c) };
-  const changes = (['y', 'm', 'c'] as const)
+  // du magenta et du cyan. On ajoute donc aux trois ce qui manque au plus bas.
+  const k = Math.max(0, -Math.min(y, m));
+  const filtration = { y: clamp(y + k), m: clamp(m + k), c: clamp(from.c + k) };
+  const changes = CHANNELS
     .map((ch) => [ch, filtration[ch] - from[ch]] as const)
     .filter(([, d]) => d !== 0)
     .map(([ch, d]) => `${d > 0 ? '+' : '−'}${Math.abs(d)} ${ch.toUpperCase()}`);
 
   return { cast, level, filtration, changes };
+}
+
+/**
+ * Textes du résultat pour la vignette choisie, partagés par le rendu serveur
+ * et le script de la page. Sans temps valide, `t` est undefined.
+ */
+export function describe(value: string, from: Filtration, time: number) {
+  const correction = correct(value, from);
+  const { cast, level, filtration } = correction;
+  const t = time > 0 ? newTime(time, from, filtration) : undefined;
+  return {
+    correction,
+    t,
+    label: cast && level ? `Tirage ${cast.label.toLowerCase()}, ${LEVELS[level].adj}` : 'Tirage neutre',
+    changes: correction.changes.length ? correction.changes.join('   ') : 'Rien à changer',
+    chips: [...CHANNELS.map((ch) => `${ch.toUpperCase()} ${filtration[ch]}`), t === undefined ? '–' : `${formatTime(t)} s`],
+    detail: t === undefined ? 'Entre le temps de ce tirage.' : `calcul : ${formatNumber(t)} s, au lieu de ${formatTime(time)} s`,
+  };
 }

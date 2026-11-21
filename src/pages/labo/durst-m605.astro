@@ -1,6 +1,6 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import { describe, FACTORS, MAX, STEP } from '../../lib/labo/durst';
+import { CHANNEL_FIELDS as channels, describe, FACTORS, MAX, STEP } from '../../lib/labo/durst';
 import { formatNumber } from '../../lib/labo/math';
 
 // Valeurs par défaut : l'exemple 1 de la notice (20/10/00 à 10 s → 20/40/00).
@@ -12,11 +12,6 @@ const result = describe(time, from, to, target);
 
 const pad = (v: number) => String(v).padStart(2, '0');
 const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FACTORS.m[i], c: FACTORS.c[i] }));
-const channels = [
-  { key: 'y', label: 'Jaune' },
-  { key: 'm', label: 'Magenta' },
-  { key: 'c', label: 'Cyan' },
-] as const;
 ---
 
 <LaboTool id="durst-m605">
@@ -163,8 +158,8 @@ const channels = [
 </style>
 
 <script>
-  import { CHANNELS, clamp, describe, SETTING_KEY, STEP, type Filtration, type Setting } from '../../lib/labo/durst';
-  import { readNumber, roundTime } from '../../lib/labo/math';
+  import { CHANNELS, clamp, describe, loadSetting, saveSetting, STEP, type Filtration } from '../../lib/labo/durst';
+  import { readNumber } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
   const KEY = 'durst';
@@ -184,16 +179,16 @@ const channels = [
   // changé le réglage depuis, il devient la nouvelle bande test.
   function restore() {
     const state = load<State>(KEY);
-    const setting = load<Setting>(SETTING_KEY);
+    const setting = loadSetting();
     if (state) {
       for (const name of FIELDS) if (typeof state[name] === 'number') input(name).value = String(state[name]);
     }
-    if (setting && typeof setting.time === 'number' && (!state || (setting.at ?? 0) > (state.at ?? 0))) {
+    if (setting && (!state || setting.at > (state.at ?? 0))) {
       for (const ch of CHANNELS) {
-        input(`o${ch}`).value = String(setting[ch] ?? 0);
-        input(`n${ch}`).value = String(setting[ch] ?? 0);
+        input(`o${ch}`).value = String(setting[ch]);
+        input(`n${ch}`).value = String(setting[ch]);
       }
-      input('time').value = String(roundTime(setting.time));
+      input('time').value = String(setting.time);
     }
   }
 
@@ -236,8 +231,7 @@ const channels = [
     const state = { at } as State;
     for (const name of FIELDS) state[name] = readNumber(input(name));
     save(KEY, state);
-    // On partage le temps tel qu'il se règle sur le compte-pose.
-    save<Setting>(SETTING_KEY, { ...to, time: roundTime(result.t), at });
+    saveSetting(to, result.t, at);
   }
 
   restore();
