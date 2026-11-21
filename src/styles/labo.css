@@ -290,11 +290,6 @@ legend.field__label {
   font-weight: 600;
 }
 
-.result .chips .chip--t {
-  background: #ffffff;
-  color: var(--fg);
-}
-
 /* Bloc secondaire encadré. */
 .box {
   display: flex;
