@@ -197,3 +197,136 @@ legend.field__label {
     padding: 0 8px;
   }
 }
+
+/* Champs Y / M / C (et temps) côte à côte. */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filters .input {
+  width: 100%;
+  padding: 0 10px;
+}
+
+.filters__title {
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.filters__note {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Résultat principal, sur fond noir. */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--fg);
+  color: #ffffff;
+}
+
+.result__label,
+.result__detail {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #b9bdc3;
+}
+
+.result__value {
+  font-family: var(--font-mono);
+  font-size: clamp(44px, 8vw, 56px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+/* Filtration résultante : une pastille par filtre. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 16px;
+}
+
+.chips li {
+  padding: 12px 14px;
+  color: var(--fg);
+}
+
+.chips .chip--y {
+  background: var(--filter-y);
+}
+
+.chips .chip--m {
+  background: var(--filter-m);
+}
+
+.chips .chip--c {
+  background: var(--filter-c);
+}
+
+.chips .chip--t {
+  background: var(--fg);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.result .chips .chip--t {
+  background: #ffffff;
+  color: var(--fg);
+}
+
+/* Bloc secondaire encadré. */
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+}
+
+.box__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.more {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.more summary {
+  min-height: 32px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .filters {
+    gap: 8px;
+  }
+
+  .box {
+    padding: 16px;
+  }
+}
