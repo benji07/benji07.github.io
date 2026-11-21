@@ -33,7 +33,7 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
           }
           <label class="field">
             <span class="field__label">Temps (s)</span>
-            <input class="input" name="time" type="number" inputmode="decimal" min="0.5" step="any" value={time} />
+            <input class="input" name="time" type="text" inputmode="decimal" autocomplete="off" value={time} />
           </label>
         </div>
       </fieldset>
@@ -53,8 +53,8 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
       </fieldset>
     </form>
 
-    <section class="tool__result" aria-live="polite">
-      <div class="result">
+    <section class="tool__result">
+      <div class="result" aria-live="polite">
         <span class="result__label">Nouveau temps</span>
         <output class="result__value" id="durst-time" form="durst-form">{result.time}</output>
         <span class="result__detail" id="durst-detail">{result.detail}</span>
@@ -66,7 +66,7 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
         <div class="field">
           <label class="field__label" for="durst-target">Temps visé</label>
           <div class="field__unit">
-            <input class="input" id="durst-target" name="target" form="durst-form" type="number" inputmode="decimal" min="1" step="any" value={target} />
+            <input class="input" id="durst-target" name="target" form="durst-form" type="text" inputmode="decimal" autocomplete="off" value={target} />
             <span>s</span>
           </div>
         </div>
@@ -158,7 +158,7 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
 </style>
 
 <script>
-  import { CHANNELS, clamp, describe, loadSetting, saveSetting, STEP, type Filtration } from '../../lib/labo/durst';
+  import { CHANNELS, describe, dial, loadSetting, saveSetting, STEP, type Filtration } from '../../lib/labo/durst';
   import { readNumber } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
@@ -192,11 +192,20 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
     }
   }
 
+  // Les molettes vont de 0 à 130 par crans de 1 : on calcule sur ce qui se règle.
   const filtration = (prefix: 'o' | 'n'): Filtration => ({
-    y: clamp(readNumber(input(`${prefix}y`))),
-    m: clamp(readNumber(input(`${prefix}m`))),
-    c: clamp(readNumber(input(`${prefix}c`))),
+    y: dial(readNumber(input(`${prefix}y`))),
+    m: dial(readNumber(input(`${prefix}m`))),
+    c: dial(readNumber(input(`${prefix}c`))),
   });
+
+  // En fin de saisie, le champ affiche la valeur utilisée pour le calcul.
+  function normalize() {
+    for (const prefix of ['o', 'n'] as const) {
+      const f = filtration(prefix);
+      for (const ch of CHANNELS) input(`${prefix}${ch}`).value = String(f[ch]);
+    }
+  }
 
   function highlight(from: Filtration, to: Filtration) {
     document.querySelectorAll('td.is-used').forEach((td) => td.classList.remove('is-used'));
@@ -208,7 +217,7 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
     }
   }
 
-  function update() {
+  function update(event?: Event) {
     const from = filtration('o');
     const to = filtration('n');
     const time = readNumber(input('time'));
@@ -218,6 +227,8 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
     if (!(time > 0)) {
       timeOut.textContent = '–';
       detail.textContent = 'Entre le temps de la bande test.';
+      chips.forEach((chip) => (chip.textContent = '–'));
+      neutralNote.textContent = '';
       return;
     }
 
@@ -227,6 +238,9 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
     chips.forEach((chip, i) => (chip.textContent = result.chips[i]));
     neutralNote.textContent = result.note;
 
+    // Seule une saisie compte comme une modification : ouvrir la page ne
+    // doit pas prendre la main sur le réglage partagé.
+    if (!event) return;
     const at = Date.now();
     const state = { at } as State;
     for (const name of FIELDS) state[name] = readNumber(input(name));
@@ -237,5 +251,9 @@ const rows = FACTORS.y.map((_, i) => ({ value: i * STEP, y: FACTORS.y[i], m: FAC
   restore();
   update();
   form.addEventListener('input', update);
+  form.addEventListener('change', () => {
+    normalize();
+    update(new Event('change'));
+  });
   form.addEventListener('submit', (event) => event.preventDefault());
 </script>

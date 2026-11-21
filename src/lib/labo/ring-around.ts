@@ -4,7 +4,7 @@
 // Tirage d'après négatif : une dominante se neutralise avec un filtre de la
 // même couleur (règle 1 de la notice Durst). La correction se fait en jaune
 // et magenta ; le cyan déjà réglé (gris pour allonger le temps) est gardé.
-import { CHANNELS, clamp, newTime, type Filtration } from './durst';
+import { CHANNELS, clamp, MAX, newTime, type Filtration } from './durst';
 import { formatNumber, formatTime } from './math';
 
 export interface Cast {
@@ -91,8 +91,12 @@ export function correct(value: string, from: Filtration): Correction {
 
   // Un filtre ne descend pas sous 0 : retirer du jaune revient à ajouter
   // du magenta et du cyan. On ajoute donc aux trois ce qui manque au plus bas.
+  // De même, un filtre ne dépasse pas MAX : on retire alors la même valeur
+  // aux trois (moins de gris neutre), ce qui garde l'équilibre des couleurs.
   const k = Math.max(0, -Math.min(y, m));
-  const filtration = { y: clamp(y + k), m: clamp(m + k), c: clamp(from.c + k) };
+  const over = Math.max(0, Math.max(y, m, from.c) + k - MAX);
+  const shift = k - over;
+  const filtration = { y: clamp(y + shift), m: clamp(m + shift), c: clamp(from.c + shift) };
   const changes = CHANNELS
     .map((ch) => [ch, filtration[ch] - from[ch]] as const)
     .filter(([, d]) => d !== 0)

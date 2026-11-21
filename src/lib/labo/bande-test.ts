@@ -1,7 +1,7 @@
 // Bande test en stops : temps de chaque volet du margeur (6 volets, un ou
 // deux passages). Utilisé côté serveur pour le rendu initial et dans le
 // navigateur à chaque changement de réglage.
-import { formatStops, formatTime, stopWord } from './math';
+import { formatStops, formatTime, roundTime, stopWord } from './math';
 
 export interface StripSettings {
   /** Temps le plus court, en secondes. */
@@ -48,7 +48,9 @@ export function computeStrip({ start, den, count, mode }: StripSettings): Strip 
     passes.push(
       pass.map((t, i) => {
         if (!cumul || i === 0) return { label: formatTime(t), tone: tone(t, ref) };
-        const add = t - pass[i - 1];
+        // Écart entre temps arrondis : la somme des ajouts réglés au
+        // compte-pose retombe bien sur le temps cumulé affiché.
+        const add = roundTime(t) - roundTime(pass[i - 1]);
         if (add < 1) shortAdd = true;
         return { label: `+${formatTime(add)}`, tone: tone(t, ref) };
       }),
