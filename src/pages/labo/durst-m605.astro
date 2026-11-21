@@ -65,7 +65,7 @@ const channels = [
         <span class="result__label">Nouveau temps</span>
         <output class="result__value" id="durst-time" form="durst-form">{formatTime(t)} s</output>
         <span class="result__detail" id="durst-detail">
-          {formatNumber(t)} s · × {formatNumber(factor, 3)} · +{formatNumber(Math.log2(factor))} stop
+          calcul : {formatNumber(t)} s · × {formatNumber(factor, 3)} · +{formatNumber(Math.log2(factor))} stop
         </span>
       </div>
 
@@ -173,7 +173,7 @@ const channels = [
 
 <script>
   import { clamp, newTime, neutralFor, product, SETTING_KEY, type Filtration, type Setting } from '../../lib/labo/durst';
-  import { formatNumber, formatTime, readNumber } from '../../lib/labo/math';
+  import { formatNumber, formatTime, readNumber, roundTime } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
   const KEY = 'durst';
@@ -200,7 +200,7 @@ const channels = [
         input(`o${ch}`).value = String(setting[ch] ?? 0);
         input(`n${ch}`).value = String(setting[ch] ?? 0);
       }
-      input('time').value = String(Math.round(setting.time * 10) / 10);
+      input('time').value = String(roundTime(setting.time));
     }
   }
 
@@ -237,7 +237,7 @@ const channels = [
     const factor = product(to) / product(from);
     const stops = Math.log2(factor);
     timeOut.textContent = `${formatTime(t)} s`;
-    detail.textContent = `${formatNumber(t)} s · × ${formatNumber(factor, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} stop`;
+    detail.textContent = `calcul : ${formatNumber(t)} s · × ${formatNumber(factor, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} stop`;
 
     const neutral = target > 0 ? neutralFor(t, to, target) : undefined;
     chips[0].textContent = `Y ${neutral?.filtration.y ?? '–'}`;
@@ -254,7 +254,8 @@ const channels = [
     const state = { at } as State;
     for (const name of FIELDS) state[name] = readNumber(input(name));
     save(KEY, state);
-    save<Setting>(SETTING_KEY, { ...to, time: t, at });
+    // On partage le temps tel qu'il se règle sur le compte-pose.
+    save<Setting>(SETTING_KEY, { ...to, time: roundTime(t), at });
   }
 
   restore();
