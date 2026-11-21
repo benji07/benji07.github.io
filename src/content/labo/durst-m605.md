@@ -1,5 +1,5 @@
 ---
-title: "Durst M605 : filtration → temps"
+title: "Durst M605 : changement de filtration"
 summary: "Le nouveau temps quand on bouge le jaune, le magenta ou le cyan, d'après la table de la notice."
 section: "Couleur · RA-4"
 order: 10
