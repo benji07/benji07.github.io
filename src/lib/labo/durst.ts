@@ -37,6 +37,9 @@ export const FACTORS: Record<Channel, number[]> = {
 
 export const clamp = (v: number) => Math.max(0, Math.min(MAX, Number.isFinite(v) ? v : 0));
 
+/** Valeur réglable sur une molette : entière, entre 0 et MAX. */
+export const dial = (v: number) => Math.round(clamp(v));
+
 /** Facteur d'un filtre ; les molettes se règlent au cran de 1, on interpole entre deux lignes. */
 export function factor(channel: Channel, value: number): number {
   const table = FACTORS[channel];
@@ -62,6 +65,7 @@ export function newTime(time: number, from: Filtration, to: Filtration): number 
  * molettes n'y suffisent pas.
  */
 export function neutralFor(time: number, from: Filtration, target: number) {
+  if (time >= target) return undefined;
   const room = MAX - Math.max(from.y, from.m, from.c);
   const base = time / product(from);
   for (let n = STEP; n <= room; n += STEP) {
@@ -90,11 +94,13 @@ export function describe(time: number, from: Filtration, to: Filtration, target:
       ...CHANNELS.map((ch) => `${ch.toUpperCase()} ${neutral?.filtration[ch] ?? '–'}`),
       neutral ? `${formatTime(neutral.time)} s` : '–',
     ],
-    note: neutral
-      ? `+${neutral.added} sur chaque filtre. Refais une petite bande : le gris des filtres n’est jamais parfaitement neutre.`
-      : target > 0 && target <= t
-        ? 'Le temps est déjà assez long.'
-        : 'Pas atteignable avec les molettes : ferme le diaphragme d’un cran, ou engage le filtre supplémentaire de la tête.',
+    note: !(target > 0)
+      ? ''
+      : neutral
+        ? `+${neutral.added} sur chaque filtre. Refais une petite bande : le gris des filtres n’est jamais parfaitement neutre.`
+        : target <= t
+          ? 'Le temps est déjà assez long.'
+          : 'Pas atteignable avec les molettes : ferme le diaphragme d’un cran, ou engage le filtre supplémentaire de la tête.',
   };
 }
 
