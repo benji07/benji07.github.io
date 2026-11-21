@@ -32,9 +32,9 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
 
     <section class="tool__result" aria-live="polite">
       <div class="result">
-        <span class="result__label">Correction</span>
-        <output class="result__value format__stops" id="format-stops" form="format-form">{result.stops}</output>
-        <span class="format__same" id="format-same">{result.same}</span>
+        <span class="result__label">Nouveau temps, même diaphragme</span>
+        <output class="result__value" id="format-time" form="format-form">{result.time}</output>
+        <span class="format__comparison" id="format-comparison">{result.comparison}</span>
         <span class="result__detail" id="format-aperture">{result.aperture}</span>
       </div>
 
@@ -61,15 +61,9 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
     border-color: var(--fg);
   }
 
-  .format__stops {
-    font-family: var(--font-sans);
-    font-weight: 600;
-  }
-
-  .format__same {
-    padding-top: 6px;
-    font-size: 16px;
-    font-weight: 600;
+  .format__comparison {
+    font-family: var(--font-mono);
+    font-size: 15px;
   }
 
   .result__detail {
@@ -117,8 +111,8 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
   const form = document.querySelector<HTMLFormElement>('#format-form')!;
   const negative = form.querySelector<HTMLSelectElement>('select[name="negative"]')!;
   const input = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
-  const stops = document.querySelector<HTMLOutputElement>('#format-stops')!;
-  const same = document.querySelector<HTMLElement>('#format-same')!;
+  const timeOut = document.querySelector<HTMLOutputElement>('#format-time')!;
+  const comparison = document.querySelector<HTMLElement>('#format-comparison')!;
   const aperture = document.querySelector<HTMLElement>('#format-aperture')!;
   const fromBox = document.querySelector<HTMLElement>('#format-from')!;
   const toBox = document.querySelector<HTMLElement>('#format-to')!;
@@ -143,16 +137,16 @@ const max = Math.max(DEFAULTS.from, DEFAULTS.to);
       to: readNumber(input('to')),
     };
     if (!(settings.time > 0 && settings.from > 0 && settings.to > 0)) {
-      stops.textContent = '–';
-      same.textContent = 'Remplis les valeurs avec des nombres supérieurs à 0.';
+      timeOut.textContent = '–';
+      comparison.textContent = 'Remplis les valeurs avec des nombres supérieurs à 0.';
       aperture.textContent = '';
       return;
     }
     save(KEY, { ...settings, negativeIndex: negative.selectedIndex });
 
     const result = computeFormat(settings);
-    stops.textContent = result.stops;
-    same.textContent = result.same;
+    timeOut.textContent = result.time;
+    comparison.textContent = result.comparison;
     aperture.textContent = result.aperture;
 
     const max = Math.max(settings.from, settings.to);
