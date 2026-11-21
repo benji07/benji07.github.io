@@ -1,0 +1,199 @@
+/* Outils du labo (/labo/<outil>/) : formulaires et résultats partagés. */
+
+.labo {
+  /* Couleurs des filtres de la tête Durst, reprises sur les champs. */
+  --filter-y: #ffe14d;
+  --filter-m: #f7a8d3;
+  --filter-c: #8eeaf5;
+  --field-line: #c9ccd1;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-page);
+}
+
+.labo__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-head);
+  max-width: 720px;
+}
+
+/* Réglages à gauche, résultat à droite ; empilés sur petit écran. */
+.tool {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 40px var(--gap-columns);
+}
+
+.tool__form {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tool__result {
+  flex: 999 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tool__summary {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tool__text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+/* Champs */
+.field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field__label {
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+legend.field__label {
+  margin-bottom: 8px;
+}
+
+.field__unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.input {
+  width: 120px;
+  max-width: 100%;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--field-line);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 18px;
+}
+
+.input--y,
+.input--m,
+.input--c {
+  width: 100%;
+  border-color: transparent;
+}
+
+.input--y {
+  background: var(--filter-y);
+}
+
+.input--m {
+  background: var(--filter-m);
+}
+
+.input--c {
+  background: var(--filter-c);
+}
+
+/* Choix exclusifs : boutons radio présentés en barre segmentée. */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--fg);
+}
+
+.seg label {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seg span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 52px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.seg label + label span {
+  border-left: 1px solid var(--fg);
+}
+
+.seg input:checked + span {
+  background: var(--fg);
+  color: #ffffff;
+}
+
+.seg input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: -5px;
+}
+
+/* Avertissement sous un résultat. */
+.hint {
+  margin: 0;
+  padding: 12px 14px;
+  background: #fff6d6;
+  color: #4d3b00;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.label-s {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .seg {
+    width: 100%;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .seg span {
+    min-height: 48px;
+    min-width: 0;
+    padding: 0 8px;
+  }
+}

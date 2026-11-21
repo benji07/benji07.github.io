@@ -15,6 +15,7 @@ Tout le contenu est dans `src/content/`, en markdown ; les pages
 | Textes des pages (accueil, workshop, portfolio, blog, 404) | `src/content/pages/<page>.md` |
 | Workshops (`/workshop/<slug>/`) | un dossier par workshop dans `src/content/workshops/` |
 | Portfolio (`/portfolio/<slug>/`) | un dossier par série dans `src/content/series/`, voir [docs/PORTFOLIO.md](docs/PORTFOLIO.md) |
+| Outils de labo (`/labo/<slug>/`) | texte dans `src/content/labo/<slug>.md`, calcul dans `src/pages/labo/<slug>.astro` |
 | Projets listés sur l'accueil | `src/content/projects.yaml` |
 | Blog (`/blog/`) | `src/content/blog/`, articles d'origine, non modifiés |
 | Liens (Instagram, GitHub, LinkedIn) | `src/lib/site.ts` |

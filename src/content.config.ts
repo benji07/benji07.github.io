@@ -102,4 +102,21 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { blog, series, pages, workshops, projects };
+// Un outil du labo = un fichier src/content/labo/<slug>.md, publié à
+// /labo/<slug>/. Le frontmatter alimente le sommaire, le corps est le texte
+// d'introduction ; le calcul lui-même est dans src/pages/labo/<slug>.astro.
+const labo = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/labo' }),
+  schema: z.object({
+    title: z.string(),
+    // Une phrase, affichée dans le sommaire.
+    summary: z.string(),
+    // Les outils sont regroupés dans le sommaire par section, dans l'ordre
+    // du premier outil de chaque section.
+    section: z.string(),
+    order: z.number().default(0),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, series, pages, workshops, projects, labo };
