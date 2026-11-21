@@ -26,6 +26,12 @@ export const getLaboTools = (): Promise<LaboTool[]> => getPublished('labo');
 
 export const getLaboTool = (id: string) => getText('labo', id);
 
+// Un outil en brouillon n'est visible qu'en dev : en production, sa page
+// redirige vers le sommaire.
+export async function isLaboDraft(id: string) {
+  return !import.meta.env.DEV && (await getEntry('labo', id))?.data.draft === true;
+}
+
 export async function getProjects() {
   const projects = await getCollection('projects');
   return projects.sort((a, b) => a.data.order - b.data.order);
