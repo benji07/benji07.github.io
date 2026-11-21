@@ -86,8 +86,10 @@ const channels = [
 </LaboTool>
 
 <style>
-  .ring-field {
-    flex: 1 1 520px;
+  /* Vignettes et réglage à parts égales ; empilés sur petit écran. */
+  .ring-field,
+  .ring-field + .tool__result {
+    flex: 1 1 400px;
     min-width: 0;
   }
 
@@ -95,7 +97,6 @@ const channels = [
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
-    max-width: 560px;
   }
 
   .tile {
