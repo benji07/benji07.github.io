@@ -223,13 +223,6 @@ legend.field__label {
   font-weight: 600;
 }
 
-.filters__note {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-}
-
 /* Résultat principal, sur fond noir. */
 .result {
   display: flex;
@@ -328,4 +321,20 @@ legend.field__label {
   .box {
     padding: 16px;
   }
+}
+
+/* Formule d'un texte d'outil : une seule ligne, défilable sur petit écran. */
+.prose .formula {
+  margin: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  color: var(--fg);
+}
+
+.prose .formula-note {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
 }

@@ -73,7 +73,7 @@ export function computeStrip({ start, den, count, mode }: StripSettings): Strip 
 
   return {
     passes,
-    summary: `${count} plages de ${formatTime(times[0])} à ${formatTime(times[count - 1])} s, soit ${formatStops(span)} ${stopWord(span)} couverts.`,
+    summary: `${count} plages, de ${formatTime(times[0])} à ${formatTime(times[count - 1])} s (${formatStops(span)} ${stopWord(span)}).`,
     method: cumul
       ? 'À chaque passage : ouvre tous les volets, pose le premier temps, puis referme un volet avant chaque ajout, en commençant par le 1.'
       : 'Ouvre un seul volet à la fois et règle le temps inscrit dessous.',

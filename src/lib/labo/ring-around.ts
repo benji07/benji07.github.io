@@ -119,6 +119,6 @@ export function describe(value: string, from: Filtration, time: number) {
     label: cast && level ? `Tirage ${cast.label.toLowerCase()}, ${LEVELS[level].adj}` : 'Tirage neutre',
     changes: correction.changes.length ? correction.changes.join('   ') : 'Rien à changer',
     chips: [...CHANNELS.map((ch) => `${ch.toUpperCase()} ${filtration[ch]}`), t === undefined ? '–' : `${formatTime(t)} s`],
-    detail: t === undefined ? 'Entre le temps de ce tirage.' : `calcul : ${formatNumber(t)} s, au lieu de ${formatTime(time)} s`,
+    detail: t === undefined ? 'Entre le temps de ce tirage.' : `au lieu de ${formatTime(time)} s`,
   };
 }
