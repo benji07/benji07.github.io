@@ -8,6 +8,20 @@
   --accent: #2346d8;
   --accent-hover: #16309e;
 
+  /* Surfaces inversées (bouton plein, résultats du labo) : texte posé sur
+     var(--fg), et leur survol. */
+  --on-fg: #ffffff;
+  --on-fg-muted: #b9bdc3;
+  --fg-hover: #2a2c31;
+  /* Encre fixe, pour le texte posé sur les couleurs de filtres du labo. */
+  --ink: #111214;
+  /* Fond du cadre polaroid et ombre des photos posées dessus. */
+  --polaroid: #eef0f3;
+  --photo-shadow: 0 1px 3px rgba(17, 18, 20, 0.18);
+  /* Contour des aplats de couleur (bande test). */
+  --swatch-line: rgb(0 0 0 / 8%);
+  --field-line: #c9ccd1;
+
   --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -21,6 +35,32 @@
   --space-label: 12px; /* étiquette → contenu */
   --gap-columns: 56px; /* entre deux colonnes */
   --gap-photos: 12px; /* entre deux photos */
+
+  color-scheme: light dark;
+}
+
+/* Mode sombre : suit le réglage du système. Mêmes rôles, mêmes contrastes ;
+   le bleu s'éclaircit pour rester lisible sur fond noir. Les photos ne
+   changent pas. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1012;
+    --fg: #ededef;
+    --text: #b4b8bf;
+    --muted: #8d929a;
+    --line: #26282d;
+    --soft: #1a1c20;
+    --accent: #7b93ff;
+    --accent-hover: #a5b5ff;
+
+    --on-fg: #0f1012;
+    --on-fg-muted: #4a4e55;
+    --fg-hover: #c9ccd2;
+    --polaroid: #1c1e22;
+    --photo-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    --swatch-line: rgb(255 255 255 / 12%);
+    --field-line: #3a3d43;
+  }
 }
 
 *,
@@ -131,12 +171,12 @@ h3 {
 
 .button--solid {
   background: var(--fg);
-  color: #ffffff;
+  color: var(--on-fg);
 }
 
 .button--solid:hover {
-  background: #2a2c31;
-  color: #ffffff;
+  background: var(--fg-hover);
+  color: var(--on-fg);
 }
 
 .facts {
