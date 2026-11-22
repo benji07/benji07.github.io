@@ -21,12 +21,12 @@ export interface Cast {
 
 // Dans l'ordre du cercle chromatique, en partant du haut.
 export const CASTS: Cast[] = [
-  { id: 'jaune', label: 'Jaune', color: '#f0d000', y: 1, m: 0, cells: [[1, 2], [0, 2]] },
-  { id: 'rouge', label: 'Rouge', color: '#d23a2a', y: 1, m: 1, cells: [[1, 3], [0, 4]] },
-  { id: 'magenta', label: 'Magenta', color: '#d0208a', y: 0, m: 1, cells: [[3, 3], [4, 4]] },
-  { id: 'bleu', label: 'Bleu', color: '#2850c8', y: -1, m: 0, cells: [[3, 2], [4, 2]] },
-  { id: 'cyan', label: 'Cyan', color: '#10a8c8', y: -1, m: -1, cells: [[3, 1], [4, 0]] },
-  { id: 'vert', label: 'Vert', color: '#2e9a3a', y: 0, m: -1, cells: [[1, 1], [0, 0]] },
+  { id: 'jaune', label: 'Jaune', color: '#ffff00', y: 1, m: 0, cells: [[1, 2], [0, 2]] },
+  { id: 'rouge', label: 'Rouge', color: '#ff0000', y: 1, m: 1, cells: [[1, 3], [0, 4]] },
+  { id: 'magenta', label: 'Magenta', color: '#ff00ff', y: 0, m: 1, cells: [[3, 3], [4, 4]] },
+  { id: 'bleu', label: 'Bleu', color: '#0000ff', y: -1, m: 0, cells: [[3, 2], [4, 2]] },
+  { id: 'cyan', label: 'Cyan', color: '#00ffff', y: -1, m: -1, cells: [[3, 1], [4, 0]] },
+  { id: 'vert', label: 'Vert', color: '#00ff00', y: 0, m: -1, cells: [[1, 1], [0, 0]] },
 ];
 
 /**
