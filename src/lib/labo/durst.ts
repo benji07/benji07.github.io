@@ -97,7 +97,7 @@ export function describe(time: number, from: Filtration, to: Filtration, target:
     /** Temps calcul\u00e9, non arrondi. */
     t,
     time: `${formatTime(t)} s`,
-    detail: `calcul : ${formatNumber(t)} s · × ${formatNumber(f, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} ${stopWord(Math.abs(stops))}`,
+    detail: `× ${formatNumber(f, 3)} · ${stops >= 0 ? '+' : '−'}${formatNumber(Math.abs(stops))} ${stopWord(Math.abs(stops))}`,
     chips: [
       ...CHANNELS.map((ch) => `${ch.toUpperCase()} ${neutral?.filtration[ch] ?? '–'}`),
       neutral ? `${formatTime(neutral.time)} s` : '–',
@@ -105,7 +105,7 @@ export function describe(time: number, from: Filtration, to: Filtration, target:
     note: !(target > 0)
       ? ''
       : neutral
-        ? `+${neutral.added} sur chaque filtre. Refais une petite bande : le gris des filtres n’est jamais parfaitement neutre.`
+        ? `+${neutral.added} sur chaque filtre. Refais une petite bande test.`
         : target <= t
           ? 'Le temps est déjà assez long.'
           : 'Pas atteignable avec les molettes : ferme le diaphragme d’un cran, ou engage le filtre supplémentaire de la tête.',

@@ -60,8 +60,8 @@ export function computeFormat({ negative, time, from, to }: FormatSettings): For
     comparison: `au lieu de ${formatTime(time)} s · ≈ ${delta > 0 ? '+' : '−'}${formatStops(abs)} ${stopWord(abs)}`,
     aperture:
       n === 0
-        ? 'L’écart est assez petit pour être absorbé au compte-pose.'
-        : `${n > 0 ? 'En ouvrant' : 'En fermant'} de ${k} ${stopWord(k)} : ${formatTime(t / 2 ** n)} s, pour rester dans ta zone de temps habituelle.`,
+        ? 'Écart négligeable.'
+        : `${n > 0 ? 'En ouvrant' : 'En fermant'} de ${k} ${stopWord(k)} : ${formatTime(t / 2 ** n)} s.`,
     prints,
   };
 }
