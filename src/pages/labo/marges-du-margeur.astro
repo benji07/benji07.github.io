@@ -1,291 +1,642 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import {
-  BOTTOMS,
-  cm,
-  computeEasel,
-  DEFAULTS,
-  describe,
-  drawEasel,
-  EASELS,
-  MODES,
-  NAMES,
-  NEGATIVES,
-  ORIENTATIONS,
-  PAPERS,
-  RATIOS,
-  renderSides,
-  type Side,
-} from '../../lib/labo/margeur';
+import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '../../lib/labo/margeur';
 
-// Rendu initial avec les réglages par défaut ; le script recalcule ensuite
-// à partir des réglages mémorisés et à chaque changement.
-const outcome = computeEasel(DEFAULTS);
-const result = outcome.ok ? outcome.result : undefined;
-const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
+// Les vignettes de papier et de négatif sont rendues ici ; le schéma, les
+// cadrages et la liste dépendent de la largeur et des réglages mémorisés :
+// le script les dessine.
 ---
 
 <LaboTool id="marges-du-margeur">
-  <div class="tool">
-    <form class="tool__form" id="easel-form">
-      <label class="field">
-        <span class="field__label">Margeur</span>
-        <select class="input input--wide" name="easel">
-          {EASELS.map((easel) => <option value={easel.id} selected={easel.id === DEFAULTS.easel}>{easel.label}</option>)}
-        </select>
-      </label>
-
-      {
-        EASELS.filter((easel) => Object.keys(easel.fixed).length > 0).map((easel) => (
-          <div class="fixed" data-easel={easel.id} hidden={easel.id !== DEFAULTS.easel}>
-            {(Object.entries(easel.fixed) as [Side, { min: number; max: number }][]).map(([side, range]) => (
-              <fieldset class="field">
-                <legend class="field__label">{NAMES[side]} du margeur, côté fixe : min – max (cm)</legend>
-                <div class="pair">
-                  <input class="input" name={`fixed-${easel.id}-${side}-min`} aria-label={`${NAMES[side]} : minimum`} type="text" inputmode="decimal" autocomplete="off" value={String(range.min).replace('.', ',')} />
-                  <span aria-hidden="true">–</span>
-                  <input class="input" name={`fixed-${easel.id}-${side}-max`} aria-label={`${NAMES[side]} : maximum`} type="text" inputmode="decimal" autocomplete="off" value={String(range.max).replace('.', ',')} />
-                </div>
-              </fieldset>
-            ))}
-          </div>
-        ))
-      }
-
-      <fieldset class="field">
-        <legend class="field__label">Papier</legend>
-        <select class="input input--wide" name="paper" aria-label="Format du papier">
+  <div class="margeur" id="margeur">
+    <div class="m-picks">
+      <div>
+        <p class="label-s m-label" id="m-paper-label">Papier</p>
+        <div class="picks picks--paper" id="m-papers" role="group" aria-labelledby="m-paper-label">
           {
-            PAPERS.map((paper) => (
-              <option value={paper.id} selected={paper.id === DEFAULTS.paper}>
-                {paper.label} · {cm(paper.short)} × {cm(paper.long)} cm
-              </option>
+            PAPERS.map((p) => (
+              <button type="button" class="pick" data-id={p.id} aria-pressed={String(p.id === DEFAULTS.paper)}>
+                <Fragment set:html={paperThumb(p)} />
+                <span>{p.label}</span>
+              </button>
             ))
           }
-          <option value="custom" selected={DEFAULTS.paper === 'custom'}>Autre (taille saisie)</option>
-        </select>
-        <div class="pair">
-          <input class="input" name="long" aria-label="Grand côté réel de la feuille (cm)" type="text" inputmode="decimal" autocomplete="off" value={String(DEFAULTS.long).replace('.', ',')} />
-          <span aria-hidden="true">×</span>
-          <input class="input" name="short" aria-label="Petit côté réel de la feuille (cm)" type="text" inputmode="decimal" autocomplete="off" value={String(DEFAULTS.short).replace('.', ',')} />
-          <span class="field__unit">cm réels</span>
-        </div>
-      </fieldset>
-
-      <label class="field">
-        <span class="field__label">Négatif</span>
-        <select class="input input--wide" name="negative">
-          {NEGATIVES.map((neg) => <option value={neg.id} selected={neg.id === DEFAULTS.negative}>{neg.label}</option>)}
-        </select>
-      </label>
-
-      <label class="field">
-        <span class="field__label">Cadrage</span>
-        <select class="input input--wide" name="mode">
-          {MODES.map((mode) => <option value={mode.id} selected={mode.id === DEFAULTS.mode}>{mode.label}</option>)}
-        </select>
-      </label>
-
-      <label class="field" data-modes="ratio size" hidden={!shown('ratio size')}>
-        <span class="field__label">Ratio de l'image</span>
-        <select class="input input--wide" name="ratio">
-          {RATIOS.map((ratio) => <option value={ratio.id} selected={ratio.id === DEFAULTS.ratio}>{ratio.label}</option>)}
-        </select>
-      </label>
-
-      <div class="field" data-modes="size" hidden={!shown('size')}>
-        <label class="field__label" for="easel-size-input">Grand côté de l'image</label>
-        <div class="field__unit">
-          <input class="input" id="easel-size-input" name="size" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.size} />
-          <span>cm</span>
         </div>
       </div>
+      <div>
+        <p class="label-s m-label" id="m-neg-label">Négatif</p>
+        <div class="picks picks--neg" id="m-negs" role="group" aria-labelledby="m-neg-label">
+          {
+            NEGATIVES.map((n) => (
+              <button type="button" class="pick" data-id={n.id} aria-pressed={String(n.id === DEFAULTS.negative)}>
+                <Fragment set:html={negativeThumb(n)} />
+                <span>{n.label}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </div>
 
-      <div class="field" data-modes="equal ratio" hidden={!shown('equal ratio')}>
-        <label class="field__label" for="easel-margin" id="easel-margin-label">
-          {DEFAULTS.mode === 'equal' ? 'Marge' : 'Marge minimale'}
+    <div class="m-stage" id="m-stage">
+      <div id="m-schema"></div>
+      <div class="marge">
+        <label for="m-margin">Marge à gauche et à droite<small>glisse une lame, ou tape la valeur</small></label>
+        <div class="step">
+          <button type="button" id="m-minus" aria-label="Moins 0,5 cm">−</button>
+          <span class="step__val"><input id="m-margin" type="text" inputmode="decimal" autocomplete="off" value="1,0" />cm</span>
+          <button type="button" id="m-plus" aria-label="Plus 0,5 cm">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="m-crop">
+      <p class="label-s m-label" id="m-style-label">Cadrage</p>
+      <div class="styles" id="m-styles" role="group" aria-labelledby="m-style-label"></div>
+      <div class="m-seg" id="m-vertical" hidden>
+        <button type="button" data-v="0">Photo en largeur</button>
+        <button type="button" data-v="1">en hauteur</button>
+      </div>
+    </div>
+
+    <div class="m-todo">
+      <div>
+        <p class="label-s m-label">À régler sur le margeur, en cm</p>
+        <ol class="todo" id="m-todo"></ol>
+      </div>
+      <div class="notes" id="m-notes"></div>
+    </div>
+
+    <details class="m-easel" id="m-easel">
+      <summary>Mon margeur : <b id="m-easel-sum"></b> <span class="m-link">changer</span></summary>
+      <div class="m-easel__body">
+        <div class="m-seg">
+          {EASELS.map((e) => <button type="button" data-easel={e.id}>{e.id} lames</button>)}
+        </div>
+        <label class="fix2" id="m-fix2">
+          Marges fixes <input type="text" inputmode="decimal" autocomplete="off" value="1,0" /> cm
         </label>
-        <div class="field__unit">
-          <input class="input" id="easel-margin" name="margin" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.margin} />
-          <span>cm</span>
-        </div>
       </div>
-
-      <label class="field">
-        <span class="field__label">Marge du bas</span>
-        <select class="input input--wide" name="bottom">
-          {BOTTOMS.map((bottom) => <option value={bottom.value} selected={bottom.value === DEFAULTS.bottom}>{bottom.label}</option>)}
-        </select>
-      </label>
-
-      <label class="field">
-        <span class="field__label">Sens du margeur</span>
-        <select class="input input--wide" name="orientation">
-          {ORIENTATIONS.map((o) => <option value={o.id} selected={o.id === DEFAULTS.orientation}>{o.label}</option>)}
-        </select>
-      </label>
-    </form>
-
-    <section class="tool__result">
-      <div class="result" aria-live="polite">
-        <span class="result__label">Image</span>
-        <output class="result__value" id="easel-size" form="easel-form">
-          {result ? `${result.image.w.toFixed(1).replace('.', ',')} × ${result.image.h.toFixed(1).replace('.', ',')}` : '–'}
-        </output>
-        <span class="result__detail" id="easel-detail">{result ? describe(result) : !outcome.ok && outcome.error}</span>
-        <span class="result__detail" id="easel-crop" hidden={!result?.crop}>{result?.crop}</span>
-      </div>
-
-      <p class="hint" id="easel-hints" hidden={!result?.hints.length}>{result?.hints.join(' ')}</p>
-
-      <div class="sheet" id="easel-sheet" hidden={!result}>
-        <div class="sheet__drawing" id="easel-drawing" set:html={result ? drawEasel(result) : ''} />
-        <p class="label-s">Vu de devant l'agrandisseur. Marges en cm.</p>
-      </div>
-
-      <table class="sides" id="easel-sides-table" hidden={!result}>
-        <thead>
-          <tr>
-            <th scope="col">Côté du margeur</th>
-            <th scope="col"><span class="visually-hidden">Type</span></th>
-            <th scope="col">Marge</th>
-            <th scope="col">Réglette</th>
-          </tr>
-        </thead>
-        <tbody id="easel-sides" set:html={result ? renderSides(result) : ''} />
-      </table>
-    </section>
+    </details>
   </div>
 </LaboTool>
 
 <style>
-  .pair {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    color: var(--muted);
+  .margeur {
+    /* Gris de l'image sur la feuille. */
+    --img: #cfd3d9;
+    --paper: var(--bg);
+    --img-ink: #111214;
+
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    gap: 24px var(--gap-columns);
+    align-items: start;
   }
 
-  .pair .input {
-    width: 96px;
+  @media (prefers-color-scheme: dark) {
+    .margeur {
+      --img: #5a5f67;
+      --paper: #2e3136;
+      --img-ink: var(--fg);
+    }
   }
 
-  .fixed {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .input--wide {
-    width: 100%;
-    max-width: 320px;
-  }
-
-  /* Schéma : la feuille sur le plateau. */
-  .sheet {
+  .m-picks {
+    grid-area: 1 / 1;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
   }
 
-  .sheet__drawing {
-    display: flex;
-    justify-content: center;
-    padding: 16px;
+  .m-crop {
+    grid-area: 2 / 1;
+  }
+
+  .m-stage {
+    grid-area: 1 / 2 / 3 / 3;
+    min-width: 0;
     background: var(--soft);
   }
 
-  .sheet__drawing :global(.easel) {
-    display: block;
-    width: 100%;
-    max-height: 520px;
+  .m-todo {
+    grid-area: 3 / 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
-  .sheet__drawing :global(.easel__paper) {
-    fill: var(--bg);
-    stroke: var(--field-line);
-    stroke-width: 1;
-    vector-effect: non-scaling-stroke;
+  .m-easel {
+    grid-area: 3 / 1;
   }
 
-  .sheet__drawing :global(.easel__image) {
-    fill: var(--line);
+  .m-label {
+    margin-bottom: 8px;
   }
 
-  .sheet__drawing :global(.easel__blade) {
-    fill: var(--text);
-    opacity: 0.85;
+  /* Vignettes de papier, de négatif et de cadrage. */
+  .picks {
+    display: grid;
+    gap: 6px;
   }
 
-  .sheet__drawing :global(.easel__blade--fixed) {
-    fill: var(--fg);
-    opacity: 1;
+  .picks--paper {
+    grid-template-columns: repeat(4, 1fr);
   }
 
-  .sheet__drawing :global(.easel__size),
-  .sheet__drawing :global(.easel__label) {
+  .picks--neg {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .margeur :global(.pick) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 68px;
+    padding: 8px 2px;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
     font-family: var(--font-mono);
-    fill: var(--fg);
+    font-size: 12px;
+    cursor: pointer;
   }
 
-  .sheet__drawing :global(.easel__label) {
-    fill: var(--muted);
+  .margeur :global(.pick:hover) {
+    border-color: var(--field-line);
   }
 
-  /* Réglages côté par côté. */
-  .sides {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 15px;
-  }
-
-  .sides :global(th),
-  .sides :global(td) {
-    padding: 12px 8px;
-    border-bottom: 1px solid var(--line);
-    text-align: left;
-    font-weight: 400;
-  }
-
-  .sides thead th {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .sides :global(tbody th) {
-    font-weight: 600;
-  }
-
-  .sides :global(.sides__where),
-  .sides :global(.sides__kind) {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 400;
-    color: var(--muted);
-  }
-
-  .sides :global(.sides__margin) {
-    font-family: var(--font-mono);
-    font-size: 20px;
+  .margeur :global(.pick[aria-pressed='true']) {
+    border-color: var(--fg);
+    box-shadow: inset 0 0 0 1px var(--fg);
+    color: var(--fg);
     font-weight: 500;
   }
 
-  .sides :global(.sides__image) {
+  .margeur :global(.pick:focus-visible),
+  .margeur button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .styles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .styles :global(.style) {
+    min-height: 0;
+    justify-content: flex-start;
+    padding: 10px 4px;
+    gap: 3px;
+  }
+
+  .styles :global(.mini) {
+    height: 66px;
+    display: flex;
+    align-items: center;
+  }
+
+  .styles :global(strong) {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+  }
+
+  .styles :global(em) {
+    font-style: normal;
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .margeur :global(.t-paper) {
+    fill: var(--paper);
+    stroke: var(--fg);
+    stroke-width: 1;
+  }
+
+  .margeur :global(.t-neg) {
+    fill: var(--fg);
+  }
+
+  .margeur :global(.t-img) {
+    fill: var(--img);
+  }
+
+  /* Schéma. */
+  .m-stage :global(.schema) {
+    display: block;
+    max-width: 100%;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .m-stage :global(.schema text) {
     font-family: var(--font-mono);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .m-stage :global(.s-paper) {
+    fill: var(--paper);
+    stroke: var(--field-line);
+  }
+
+  .m-stage :global(.s-img) {
+    fill: var(--img);
+  }
+
+  .m-stage :global(.s-lost) {
+    fill: none;
+    stroke: var(--muted);
+    stroke-dasharray: 3 3;
+  }
+
+  .m-stage :global(.hatch) {
+    stroke: var(--muted);
+    stroke-width: 1;
+  }
+
+  .m-stage :global(.s-size) {
+    font-size: 17px;
+    font-weight: 500;
+    fill: var(--img-ink);
+  }
+
+  .m-stage :global(.s-size--s) {
+    font-size: 13px;
+  }
+
+  .m-stage :global(.s-cap) {
+    font-size: 11px;
+    font-weight: 400;
+    fill: var(--muted);
+  }
+
+  .m-stage :global(.s-m) {
+    font-size: 15px;
+    font-weight: 500;
+    fill: var(--fg);
+  }
+
+  .m-stage :global(.s-blade) {
+    fill: var(--fg);
+    opacity: 0.5;
+  }
+
+  .m-stage :global(.s-blade--fixed) {
+    opacity: 1;
+  }
+
+  .m-stage :global(.s-badge) {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+
+  .m-stage :global(.s-badge-t) {
+    font-size: 12px;
+    font-weight: 500;
+    fill: var(--fg);
+  }
+
+  .m-stage :global(.s-hit) {
+    fill: transparent;
+  }
+
+  .m-stage :global(.s-knob) {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+
+  .m-stage :global(.s-grip) {
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .m-stage :global(.s-handle) {
+    touch-action: none;
+    cursor: ew-resize;
+  }
+
+  .m-stage :global(.m-error) {
+    margin: 0;
+    padding: 40px 16px;
+    font-size: 15px;
     color: var(--text);
   }
 
-  @media (max-width: 640px) {
-    .sheet__drawing {
-      padding: 8px;
+  /* Marge : − / champ / +. */
+  .marge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 4px 16px 16px;
+  }
+
+  .marge label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .marge small {
+    display: block;
+    font-size: 11px;
+  }
+
+  .step {
+    display: flex;
+    align-items: stretch;
+    height: 52px;
+    background: var(--bg);
+  }
+
+  .step button {
+    width: 52px;
+    border: 1px solid var(--fg);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .step button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .step__val {
+    display: flex;
+    align-items: baseline;
+    padding: 0 10px;
+    border-block: 1px solid var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .step input {
+    width: 64px;
+    height: 50px;
+    padding: 0 4px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .step input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  /* Liste « à régler ». */
+  .todo {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--fg);
+  }
+
+  .todo :global(li) {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    border-left: 1px solid var(--line);
+  }
+
+  .todo :global(li:first-child) {
+    border-left: 0;
+  }
+
+  .todo :global(.who) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .todo :global(.n) {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--fg);
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .todo :global(b) {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .todo :global(.how) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .todo :global(li.idle b) {
+    color: var(--muted);
+  }
+
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notes :global(.orient) {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .notes :global(.orient svg) {
+    flex: none;
+  }
+
+  .notes :global(.p-easel) {
+    fill: var(--paper);
+    stroke: var(--field-line);
+  }
+
+  .notes :global(.p-fixed) {
+    fill: var(--fg);
+  }
+
+  .notes :global(.p-col) {
+    fill: var(--muted);
+  }
+
+  .notes :global(.note) {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  /* Choix à deux ou trois boutons. */
+  .m-seg {
+    display: inline-flex;
+  }
+
+  .m-crop .m-seg {
+    margin-top: 8px;
+  }
+
+  .m-seg button {
+    height: 44px;
+    margin-left: -1px;
+    padding: 0 14px;
+    border: 1px solid var(--field-line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .m-seg button:first-child {
+    margin-left: 0;
+  }
+
+  .m-seg button[aria-pressed='true'] {
+    position: relative;
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--on-fg);
+  }
+
+  /* Type de margeur, replié. */
+  .m-easel {
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .m-easel summary {
+    min-height: 28px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .m-easel summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .m-easel b {
+    font-weight: 500;
+    color: var(--fg);
+  }
+
+  .m-link {
+    margin-left: 6px;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .m-easel__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 10px;
+  }
+
+  .fix2 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .fix2 input {
+    width: 72px;
+    height: 44px;
+    margin: 0 6px;
+    padding: 0 10px;
+    border: 1px solid var(--field-line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 16px;
+  }
+
+  /* Petit écran : papier, négatif, schéma et marge, cadrage, liste. */
+  @media (max-width: 900px) {
+    .margeur {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
     }
 
-    .sides :global(th),
-    .sides :global(td) {
-      padding: 10px 4px;
+    .m-picks {
+      gap: 14px;
+    }
+
+    .margeur :global(.pick) {
+      min-height: 56px;
+      padding: 6px 2px;
+    }
+
+    .m-crop {
+      order: 1;
+    }
+
+    .m-todo {
+      order: 2;
+    }
+
+    .m-easel {
+      order: 3;
+    }
+
+    .todo {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .todo :global(li:nth-child(3)) {
+      border-left: 0;
+    }
+
+    .todo :global(li:nth-child(n + 3)) {
+      border-top: 1px solid var(--line);
     }
   }
 </style>
@@ -293,147 +644,178 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
 <script>
   import {
     cm,
-    computeEasel,
-    describe,
-    drawEasel,
+    compute,
+    DEFAULTS,
+    draw,
     EASELS,
+    MIN,
+    mini,
+    NEGATIVES,
     PAPERS,
-    renderSides,
-    type EaselSettings,
-    type EaselType,
-    type Mode,
-    type Orientation,
-    type Range,
-    type Side,
+    picto,
+    ratioName,
+    steps,
+    STYLES,
+    type Result,
+    type Settings,
   } from '../../lib/labo/margeur';
-  import { readNumber } from '../../lib/labo/math';
   import { load, save } from '../../lib/labo/store';
 
   const KEY = 'margeur';
-  const form = document.querySelector<HTMLFormElement>('#easel-form')!;
-  const field = <T extends Element = HTMLInputElement>(name: string) => form.querySelector<T>(`[name="${name}"]`)!;
-  const select = (name: string) => field<HTMLSelectElement>(name);
-  const checked = (name: string) => select(name).value;
-  /** Choisit une option si elle existe. */
-  const check = (name: string, value: string) => {
-    if ([...select(name).options].some((o) => o.value === value)) select(name).value = value;
-  };
-  const fr = (x: number) => String(x).replace('.', ',');
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-  const sizeOut = document.querySelector<HTMLOutputElement>('#easel-size')!;
-  const detail = document.querySelector<HTMLElement>('#easel-detail')!;
-  const crop = document.querySelector<HTMLElement>('#easel-crop')!;
-  const hints = document.querySelector<HTMLElement>('#easel-hints')!;
-  const sheet = document.querySelector<HTMLElement>('#easel-sheet')!;
-  const drawing = document.querySelector<HTMLElement>('#easel-drawing')!;
-  const table = document.querySelector<HTMLElement>('#easel-sides-table')!;
-  const sides = document.querySelector<HTMLElement>('#easel-sides')!;
-  const marginLabel = document.querySelector<HTMLElement>('#easel-margin-label')!;
-
-  /** Plages des côtés fixes saisies, pour chaque type de margeur. */
-  function readFixed(): EaselSettings['fixed'] {
-    const fixed = {} as EaselSettings['fixed'];
-    for (const easel of EASELS) {
-      fixed[easel.id] = {};
-      for (const side of Object.keys(easel.fixed) as Side[]) {
-        const min = readNumber(field(`fixed-${easel.id}-${side}-min`));
-        const max = readNumber(field(`fixed-${easel.id}-${side}-max`));
-        fixed[easel.id][side] = { min, max };
-      }
-    }
-    return fixed;
+  // Réglages mémorisés, en ne gardant que les valeurs connues.
+  const state: Settings = { ...DEFAULTS };
+  const stored = load<Settings>(KEY);
+  if (stored) {
+    if (PAPERS.some((p) => p.id === stored.paper)) state.paper = stored.paper!;
+    if (NEGATIVES.some((n) => n.id === stored.negative)) state.negative = stored.negative!;
+    if (STYLES.some((st) => st.id === stored.style)) state.style = stored.style!;
+    if (EASELS.some((e) => e.id === stored.easel)) state.easel = stored.easel!;
+    if (typeof stored.margin === 'number' && stored.margin >= MIN && stored.margin <= 15) state.margin = stored.margin;
+    if (typeof stored.fix2 === 'number' && stored.fix2 >= MIN && stored.fix2 <= 15) state.fix2 = stored.fix2;
+    if (typeof stored.vertical === 'boolean') state.vertical = stored.vertical;
   }
 
-  function read(): EaselSettings {
-    return {
-      easel: checked('easel') as EaselType,
-      fixed: readFixed(),
-      paper: checked('paper'),
-      long: readNumber(field('long')),
-      short: readNumber(field('short')),
-      negative: checked('negative'),
-      mode: checked('mode') as Mode,
-      ratio: checked('ratio'),
-      size: readNumber(field('size')),
-      margin: readNumber(field('margin')),
-      bottom: Number(checked('bottom')),
-      orientation: checked('orientation') as Orientation,
-    };
+  const margin = $<HTMLInputElement>('m-margin');
+  const minus = $<HTMLButtonElement>('m-minus');
+  const plus = $<HTMLButtonElement>('m-plus');
+  const schema = $('m-schema');
+  const stage = $('m-stage');
+  const easel = $<HTMLDetailsElement>('m-easel');
+  const fix2 = easel.querySelector<HTMLInputElement>('#m-fix2 input')!;
+  const readNumber = (value: string) => parseFloat(value.replace(',', '.'));
+  let current: ReturnType<typeof draw> | undefined;
+
+  function pressed(container: HTMLElement, selector: string, active: (el: HTMLElement) => boolean) {
+    container.querySelectorAll<HTMLElement>(selector).forEach((el) => el.setAttribute('aria-pressed', String(active(el))));
   }
 
-  function restore() {
-    const s = load<EaselSettings>(KEY);
-    if (!s) return;
-    for (const name of ['easel', 'paper', 'mode', 'ratio', 'orientation'] as const) {
-      if (typeof s[name] === 'string') check(name, s[name]);
-    }
-    if (typeof s.bottom === 'number') check('bottom', String(s.bottom));
-    if (typeof s.negative === 'string') check('negative', s.negative);
-    for (const name of ['long', 'short', 'size', 'margin'] as const) {
-      if (typeof s[name] === 'number' && Number.isFinite(s[name])) field(name).value = fr(s[name]);
-    }
-    for (const easel of EASELS) {
-      for (const side of Object.keys(easel.fixed) as Side[]) {
-        const range: Partial<Range> | undefined = s.fixed?.[easel.id]?.[side];
-        for (const bound of ['min', 'max'] as const) {
-          const v = range?.[bound];
-          if (typeof v === 'number' && Number.isFinite(v)) field(`fixed-${easel.id}-${side}-${bound}`).value = fr(v);
-        }
-      }
-    }
-  }
+  function render() {
+    save(KEY, state);
+    const two = state.easel === '2';
+    const m = two ? state.fix2 : state.margin;
+    if (document.activeElement !== margin) margin.value = cm(m);
+    margin.disabled = two;
+    minus.disabled = two || m <= MIN;
+    plus.disabled = two || m >= 5;
 
-  /** Affiche les champs du margeur et du mode choisis. */
-  function toggle(s: EaselSettings) {
-    form.querySelectorAll<HTMLElement>('[data-easel]').forEach((el) => (el.hidden = el.dataset.easel !== s.easel));
-    form.querySelectorAll<HTMLElement>('[data-modes]').forEach((el) => (el.hidden = !el.dataset.modes!.split(' ').includes(s.mode)));
-    marginLabel.textContent = s.mode === 'equal' ? 'Marge' : 'Marge minimale';
-  }
+    pressed($('m-papers'), '.pick', (b) => b.dataset.id === state.paper);
+    pressed($('m-negs'), '.pick', (b) => b.dataset.id === state.negative);
+    pressed(easel, '[data-easel]', (b) => b.dataset.easel === state.easel);
+    $('m-easel-sum').textContent = EASELS.find((e) => e.id === state.easel)!.label;
+    $('m-fix2').hidden = !two;
+    if (document.activeElement !== fix2) fix2.value = cm(state.fix2);
 
-  function update() {
-    const s = read();
-    toggle(s);
-    save(KEY, s);
+    // Les trois cadrages, chacun avec sa taille, pour comparer.
+    $('m-styles').innerHTML = STYLES.map((st) => {
+      const r = compute({ ...state, style: st.id });
+      const ok = !('error' in r);
+      const sub = !ok ? '' : st.id === 'gallery' ? 'bas plus large' : `${ratioName(r)} · ${r.lost >= 1 ? `−${r.lost} %` : 'entier'}`;
+      return `<button type="button" class="pick style" data-id="${st.id}" aria-pressed="${state.style === st.id}"><span class="mini">${mini(r, 76)}</span><strong>${st.label}</strong><span>${ok ? `${cm(r.img.w)} × ${cm(r.img.h)}` : '–'}</span><em>${sub}</em></button>`;
+    }).join('');
+    const vertical = $('m-vertical');
+    vertical.hidden = state.style !== 'gallery';
+    pressed(vertical, 'button', (b) => (b.dataset.v === '1') === state.vertical);
 
-    const outcome = computeEasel(s);
-    if (!outcome.ok) {
-      sizeOut.textContent = '–';
-      detail.textContent = outcome.error;
-      crop.hidden = hints.hidden = sheet.hidden = table.hidden = true;
+    const res = compute(state);
+    if ('error' in res) {
+      current = undefined;
+      schema.innerHTML = `<p class="m-error">${res.error}</p>`;
+      $('m-todo').innerHTML = '';
+      $('m-notes').innerHTML = '';
       return;
     }
-    const r = outcome.result;
-    sizeOut.textContent = `${cm(r.image.w)} × ${cm(r.image.h)}`;
-    detail.textContent = describe(r);
-    crop.hidden = !r.crop;
-    crop.textContent = r.crop ?? '';
-    hints.hidden = r.hints.length === 0;
-    hints.textContent = r.hints.join(' ');
-    sheet.hidden = table.hidden = false;
-    drawing.innerHTML = drawEasel(r);
-    sides.innerHTML = renderSides(r);
+    const cw = stage.clientWidth;
+    current = draw(res, cw, cw < 500 ? 330 : 520, { top: 1, left: 2, bottom: 3, right: 4 });
+    schema.innerHTML = current.svg;
+
+    $('m-todo').innerHTML = steps(res)
+      .map(
+        (step, i) =>
+          `<li class="${step.idle ? 'idle' : ''}"><span class="who"><span class="n">${i + 1}</span>${step.name}</span><b>${step.value}</b><span class="how">${step.how}</span></li>`,
+      )
+      .join('');
+    $('m-notes').innerHTML = notes(res).join('');
   }
 
-  form.addEventListener('input', (event) => {
-    const target = event.target as HTMLInputElement;
-    // Un format de papier remplit sa taille réelle ; une taille saisie à la
-    // main qui ne correspond à aucun format passe en « Autre ».
-    if (target.name === 'paper') {
-      const paper = PAPERS.find((p) => p.id === target.value);
-      if (paper) {
-        field('long').value = fr(paper.long);
-        field('short').value = fr(paper.short);
-      }
-    } else if (target.name === 'long' || target.name === 'short') {
-      const long = readNumber(field('long'));
-      const short = readNumber(field('short'));
-      const match = PAPERS.find((p) => p.long === Math.max(long, short) && p.short === Math.min(long, short));
-      check('paper', match?.id ?? 'custom');
+  function notes(res: Result): string[] {
+    const out = [
+      `<div class="orient">${picto(res.rotated)}<span>${
+        res.rotated
+          ? `Le ${res.negative.label} se projette en hauteur : <b>pose le margeur tourné d'un quart de tour</b>, côté fixe à droite. Les lames gardent leur nom : le schéma est dessiné comme si tu te plaçais face au côté fixe.`
+          : "Margeur à l'endroit sous l'agrandisseur, côté fixe au fond."
+      }</span></div>`,
+    ];
+    if (res.lost >= 1) {
+      out.push(
+        `<p class="note">Hachures : la partie du négatif qui tombe sur les lames (${res.lost} % perdu sur la ${res.lostAlong === 'long' ? 'longueur' : 'largeur'}).</p>`,
+      );
     }
-    update();
-  });
-  form.addEventListener('submit', (event) => event.preventDefault());
+    for (const h of res.hints) out.push(`<p class="hint">${h}</p>`);
+    return out;
+  }
 
-  restore();
-  update();
+  // Choix par vignettes.
+  $('m-papers').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.paper = b.dataset.id!), render();
+  });
+  $('m-negs').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.negative = b.dataset.id!), render();
+  });
+  $('m-styles').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.style = b.dataset.id as Settings['style']), render();
+  });
+  $('m-vertical').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('button');
+    if (b) (state.vertical = b.dataset.v === '1'), render();
+  });
+  easel.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('[data-easel]');
+    if (b) (state.easel = b.dataset.easel as Settings['easel']), render();
+  });
+  fix2.addEventListener('input', () => {
+    const v = readNumber(fix2.value);
+    if (v >= MIN && v <= 15) (state.fix2 = Math.round(v * 10) / 10), render();
+  });
+  fix2.addEventListener('blur', render);
+
+  // Marge : saisie libre (virgule acceptée), ou − / + au demi-centimètre.
+  margin.addEventListener('input', () => {
+    const v = readNumber(margin.value);
+    if (v >= MIN && v <= 15) (state.margin = Math.round(v * 10) / 10), render();
+  });
+  margin.addEventListener('blur', render);
+  margin.addEventListener('focus', () => margin.select());
+  const bump = (d: number) => {
+    const v = state.margin + d;
+    const snapped = d > 0 ? Math.floor(v * 2 + 1e-6) / 2 : Math.ceil(v * 2 - 1e-6) / 2;
+    state.margin = Math.min(5, Math.max(MIN, snapped));
+    render();
+  };
+  minus.addEventListener('click', () => bump(-0.5));
+  plus.addEventListener('click', () => bump(0.5));
+
+  // Glisser la lame gauche ou droite : l'autre suit en miroir.
+  let drag: 'left' | 'right' | null = null;
+  schema.addEventListener('pointerdown', (e) => {
+    const h = (e.target as Element).closest<SVGGElement>('.s-handle');
+    if (!h) return;
+    drag = h.dataset.side as 'left' | 'right';
+    margin.blur();
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag || !current) return;
+    const box = schema.querySelector('svg')!.getBoundingClientRect();
+    const t = Math.min(5, Math.max(MIN, Math.round(current.toMargin(drag, e.clientX - box.left) * 10) / 10));
+    if (t !== state.margin) (state.margin = t), render();
+  });
+  window.addEventListener('pointerup', () => (drag = null));
+
+  new ResizeObserver(() => render()).observe(stage);
+  render();
 </script>
