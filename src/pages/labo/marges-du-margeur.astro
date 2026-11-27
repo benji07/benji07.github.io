@@ -1,0 +1,507 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import {
+  BOTTOMS,
+  computeEasel,
+  DEFAULTS,
+  describe,
+  drawEasel,
+  EASELS,
+  MODES,
+  NAMES,
+  NEGATIVES,
+  ORIENTATIONS,
+  PAPERS,
+  RATIOS,
+  renderSides,
+  type Side,
+} from '../../lib/labo/margeur';
+
+// Rendu initial avec les réglages par défaut ; le script recalcule ensuite
+// à partir des réglages mémorisés et à chaque changement.
+const outcome = computeEasel(DEFAULTS);
+const result = outcome.ok ? outcome.result : undefined;
+const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
+---
+
+<LaboTool id="marges-du-margeur">
+  <div class="tool">
+    <form class="tool__form" id="easel-form">
+      <fieldset class="field">
+        <legend class="field__label">Margeur</legend>
+        <div class="seg">
+          {
+            EASELS.map((easel) => (
+              <label>
+                <input type="radio" name="easel" value={easel.id} checked={easel.id === DEFAULTS.easel} />
+                <span>{easel.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      {
+        EASELS.filter((easel) => Object.keys(easel.fixed).length > 0).map((easel) => (
+          <div class="fixed" data-easel={easel.id} hidden={easel.id !== DEFAULTS.easel}>
+            {(Object.entries(easel.fixed) as [Side, { min: number; max: number }][]).map(([side, range]) => (
+              <fieldset class="field">
+                <legend class="field__label">{NAMES[side]} du margeur, côté fixe : min – max (cm)</legend>
+                <div class="pair">
+                  <input class="input" name={`fixed-${easel.id}-${side}-min`} aria-label={`${NAMES[side]} : minimum`} type="text" inputmode="decimal" autocomplete="off" value={String(range.min).replace('.', ',')} />
+                  <span aria-hidden="true">–</span>
+                  <input class="input" name={`fixed-${easel.id}-${side}-max`} aria-label={`${NAMES[side]} : maximum`} type="text" inputmode="decimal" autocomplete="off" value={String(range.max).replace('.', ',')} />
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        ))
+      }
+
+      <fieldset class="field">
+        <legend class="field__label">Papier</legend>
+        <div class="seg seg--fit">
+          {
+            [...PAPERS, { id: 'custom', label: 'Autre' }].map((paper) => (
+              <label>
+                <input type="radio" name="paper" value={paper.id} checked={paper.id === DEFAULTS.paper} />
+                <span>{paper.label}</span>
+              </label>
+            ))
+          }
+        </div>
+        <div class="pair">
+          <input class="input" name="long" aria-label="Grand côté réel de la feuille (cm)" type="text" inputmode="decimal" autocomplete="off" value={String(DEFAULTS.long).replace('.', ',')} />
+          <span aria-hidden="true">×</span>
+          <input class="input" name="short" aria-label="Petit côté réel de la feuille (cm)" type="text" inputmode="decimal" autocomplete="off" value={String(DEFAULTS.short).replace('.', ',')} />
+          <span class="field__unit">cm réels</span>
+        </div>
+      </fieldset>
+
+      <label class="field">
+        <span class="field__label">Négatif</span>
+        <select class="input input--wide" name="negative">
+          {NEGATIVES.map((neg) => <option value={neg.id} selected={neg.id === DEFAULTS.negative}>{neg.label}</option>)}
+        </select>
+      </label>
+
+      <fieldset class="field">
+        <legend class="field__label">Cadrage</legend>
+        <div class="seg seg--fit">
+          {
+            MODES.map((mode) => (
+              <label>
+                <input type="radio" name="mode" value={mode.id} checked={mode.id === DEFAULTS.mode} />
+                <span>{mode.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="field" data-modes="ratio size" hidden={!shown('ratio size')}>
+        <legend class="field__label">Ratio de l'image</legend>
+        <div class="seg seg--grid">
+          {
+            RATIOS.map((ratio) => (
+              <label>
+                <input type="radio" name="ratio" value={ratio.id} checked={ratio.id === DEFAULTS.ratio} />
+                <span>{ratio.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <div class="field" data-modes="size" hidden={!shown('size')}>
+        <label class="field__label" for="easel-size-input">Grand côté de l'image</label>
+        <div class="field__unit">
+          <input class="input" id="easel-size-input" name="size" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.size} />
+          <span>cm</span>
+        </div>
+      </div>
+
+      <div class="field" data-modes="equal ratio" hidden={!shown('equal ratio')}>
+        <label class="field__label" for="easel-margin" id="easel-margin-label">
+          {DEFAULTS.mode === 'equal' ? 'Marge' : 'Marge minimale'}
+        </label>
+        <div class="field__unit">
+          <input class="input" id="easel-margin" name="margin" type="text" inputmode="decimal" autocomplete="off" value={DEFAULTS.margin} />
+          <span>cm</span>
+        </div>
+      </div>
+
+      <fieldset class="field">
+        <legend class="field__label">Marge du bas</legend>
+        <div class="seg">
+          {
+            BOTTOMS.map((bottom) => (
+              <label>
+                <input type="radio" name="bottom" value={bottom.value} checked={bottom.value === DEFAULTS.bottom} />
+                <span>{bottom.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="field__label">Sens du margeur</legend>
+        <div class="seg">
+          {
+            ORIENTATIONS.map((o) => (
+              <label>
+                <input type="radio" name="orientation" value={o.id} checked={o.id === DEFAULTS.orientation} />
+                <span>{o.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+    </form>
+
+    <section class="tool__result">
+      <div class="result" aria-live="polite">
+        <span class="result__label">Image</span>
+        <output class="result__value" id="easel-size" form="easel-form">
+          {result ? `${result.image.w.toFixed(1).replace('.', ',')} × ${result.image.h.toFixed(1).replace('.', ',')}` : '–'}
+        </output>
+        <span class="result__detail" id="easel-detail">{result ? describe(result) : !outcome.ok && outcome.error}</span>
+        <span class="result__detail" id="easel-crop" hidden={!result?.crop}>{result?.crop}</span>
+      </div>
+
+      <p class="hint" id="easel-hints" hidden={!result?.hints.length}>{result?.hints.join(' ')}</p>
+
+      <div class="sheet" id="easel-sheet" hidden={!result}>
+        <div class="sheet__drawing" id="easel-drawing" set:html={result ? drawEasel(result) : ''} />
+        <p class="label-s">Vu de devant l'agrandisseur. Marges en cm.</p>
+      </div>
+
+      <table class="sides" id="easel-sides-table" hidden={!result}>
+        <thead>
+          <tr>
+            <th scope="col">Côté du margeur</th>
+            <th scope="col"><span class="visually-hidden">Type</span></th>
+            <th scope="col">Marge</th>
+            <th scope="col">Réglette</th>
+          </tr>
+        </thead>
+        <tbody id="easel-sides" set:html={result ? renderSides(result) : ''} />
+      </table>
+    </section>
+  </div>
+</LaboTool>
+
+<style>
+  /* Barres de choix qui tiennent dans la colonne : libellés sur deux
+     lignes si besoin, ou grille de trois colonnes. */
+  .seg--fit,
+  .seg--grid {
+    width: 100%;
+  }
+
+  .seg--fit {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .seg--fit span,
+  .seg--grid span {
+    min-width: 0;
+    padding: 4px 6px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .seg--grid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--fg);
+  }
+
+  .seg--grid label span {
+    border-left: 0;
+    background: var(--bg);
+  }
+
+  .seg--grid input:checked + span {
+    background: var(--fg);
+    color: var(--on-fg);
+  }
+
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+
+  .pair .input {
+    width: 96px;
+  }
+
+  .fixed {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .input--wide {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* Schéma : la feuille sur le plateau. */
+  .sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sheet__drawing {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    background: var(--soft);
+  }
+
+  .sheet__drawing :global(.easel) {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+  }
+
+  .sheet__drawing :global(.easel__paper) {
+    fill: var(--bg);
+    stroke: var(--field-line);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .sheet__drawing :global(.easel__image) {
+    fill: var(--line);
+  }
+
+  .sheet__drawing :global(.easel__blade) {
+    fill: var(--text);
+    opacity: 0.85;
+  }
+
+  .sheet__drawing :global(.easel__blade--fixed) {
+    fill: var(--fg);
+    opacity: 1;
+  }
+
+  .sheet__drawing :global(.easel__size),
+  .sheet__drawing :global(.easel__label) {
+    font-family: var(--font-mono);
+    fill: var(--fg);
+  }
+
+  .sheet__drawing :global(.easel__label) {
+    fill: var(--muted);
+  }
+
+  /* Réglages côté par côté. */
+  .sides {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+
+  .sides :global(th),
+  .sides :global(td) {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    font-weight: 400;
+  }
+
+  .sides thead th {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .sides :global(tbody th) {
+    font-weight: 600;
+  }
+
+  .sides :global(.sides__where),
+  .sides :global(.sides__kind) {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .sides :global(.sides__margin) {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  .sides :global(.sides__image) {
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+
+  @media (max-width: 640px) {
+    .sheet__drawing {
+      padding: 8px;
+    }
+
+    .sides :global(th),
+    .sides :global(td) {
+      padding: 10px 4px;
+    }
+  }
+</style>
+
+<script>
+  import {
+    cm,
+    computeEasel,
+    describe,
+    drawEasel,
+    EASELS,
+    PAPERS,
+    renderSides,
+    type EaselSettings,
+    type EaselType,
+    type Mode,
+    type Orientation,
+    type Range,
+    type Side,
+  } from '../../lib/labo/margeur';
+  import { readNumber } from '../../lib/labo/math';
+  import { load, save } from '../../lib/labo/store';
+
+  const KEY = 'margeur';
+  const form = document.querySelector<HTMLFormElement>('#easel-form')!;
+  const field = <T extends Element = HTMLInputElement>(name: string) => form.querySelector<T>(`[name="${name}"]`)!;
+  const radios = (name: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)];
+  const checked = (name: string) => radios(name).find((r) => r.checked)?.value ?? '';
+  const check = (name: string, value: string) => radios(name).forEach((r) => (r.checked = r.value === value));
+  const fr = (x: number) => String(x).replace('.', ',');
+
+  const sizeOut = document.querySelector<HTMLOutputElement>('#easel-size')!;
+  const detail = document.querySelector<HTMLElement>('#easel-detail')!;
+  const crop = document.querySelector<HTMLElement>('#easel-crop')!;
+  const hints = document.querySelector<HTMLElement>('#easel-hints')!;
+  const sheet = document.querySelector<HTMLElement>('#easel-sheet')!;
+  const drawing = document.querySelector<HTMLElement>('#easel-drawing')!;
+  const table = document.querySelector<HTMLElement>('#easel-sides-table')!;
+  const sides = document.querySelector<HTMLElement>('#easel-sides')!;
+  const marginLabel = document.querySelector<HTMLElement>('#easel-margin-label')!;
+
+  /** Plages des côtés fixes saisies, pour chaque type de margeur. */
+  function readFixed(): EaselSettings['fixed'] {
+    const fixed = {} as EaselSettings['fixed'];
+    for (const easel of EASELS) {
+      fixed[easel.id] = {};
+      for (const side of Object.keys(easel.fixed) as Side[]) {
+        const min = readNumber(field(`fixed-${easel.id}-${side}-min`));
+        const max = readNumber(field(`fixed-${easel.id}-${side}-max`));
+        fixed[easel.id][side] = { min, max };
+      }
+    }
+    return fixed;
+  }
+
+  function read(): EaselSettings {
+    return {
+      easel: checked('easel') as EaselType,
+      fixed: readFixed(),
+      paper: checked('paper'),
+      long: readNumber(field('long')),
+      short: readNumber(field('short')),
+      negative: field<HTMLSelectElement>('negative').value,
+      mode: checked('mode') as Mode,
+      ratio: checked('ratio'),
+      size: readNumber(field('size')),
+      margin: readNumber(field('margin')),
+      bottom: Number(checked('bottom')),
+      orientation: checked('orientation') as Orientation,
+    };
+  }
+
+  function restore() {
+    const s = load<EaselSettings>(KEY);
+    if (!s) return;
+    for (const name of ['easel', 'paper', 'mode', 'ratio', 'orientation'] as const) {
+      if (typeof s[name] === 'string' && radios(name).some((r) => r.value === s[name])) check(name, s[name]);
+    }
+    if (typeof s.bottom === 'number' && radios('bottom').some((r) => Number(r.value) === s.bottom)) check('bottom', String(s.bottom));
+    const negative = field<HTMLSelectElement>('negative');
+    if ([...negative.options].some((o) => o.value === s.negative)) negative.value = s.negative!;
+    for (const name of ['long', 'short', 'size', 'margin'] as const) {
+      if (typeof s[name] === 'number' && Number.isFinite(s[name])) field(name).value = fr(s[name]);
+    }
+    for (const easel of EASELS) {
+      for (const side of Object.keys(easel.fixed) as Side[]) {
+        const range: Partial<Range> | undefined = s.fixed?.[easel.id]?.[side];
+        for (const bound of ['min', 'max'] as const) {
+          const v = range?.[bound];
+          if (typeof v === 'number' && Number.isFinite(v)) field(`fixed-${easel.id}-${side}-${bound}`).value = fr(v);
+        }
+      }
+    }
+  }
+
+  /** Affiche les champs du margeur et du mode choisis. */
+  function toggle(s: EaselSettings) {
+    form.querySelectorAll<HTMLElement>('[data-easel]').forEach((el) => (el.hidden = el.dataset.easel !== s.easel));
+    form.querySelectorAll<HTMLElement>('[data-modes]').forEach((el) => (el.hidden = !el.dataset.modes!.split(' ').includes(s.mode)));
+    marginLabel.textContent = s.mode === 'equal' ? 'Marge' : 'Marge minimale';
+  }
+
+  function update() {
+    const s = read();
+    toggle(s);
+    save(KEY, s);
+
+    const outcome = computeEasel(s);
+    if (!outcome.ok) {
+      sizeOut.textContent = '–';
+      detail.textContent = outcome.error;
+      crop.hidden = hints.hidden = sheet.hidden = table.hidden = true;
+      return;
+    }
+    const r = outcome.result;
+    sizeOut.textContent = `${cm(r.image.w)} × ${cm(r.image.h)}`;
+    detail.textContent = describe(r);
+    crop.hidden = !r.crop;
+    crop.textContent = r.crop ?? '';
+    hints.hidden = r.hints.length === 0;
+    hints.textContent = r.hints.join(' ');
+    sheet.hidden = table.hidden = false;
+    drawing.innerHTML = drawEasel(r);
+    sides.innerHTML = renderSides(r);
+  }
+
+  form.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement;
+    // Un format de papier remplit sa taille réelle ; une taille saisie à la
+    // main qui ne correspond à aucun format passe en « Autre ».
+    if (target.name === 'paper') {
+      const paper = PAPERS.find((p) => p.id === target.value);
+      if (paper) {
+        field('long').value = fr(paper.long);
+        field('short').value = fr(paper.short);
+      }
+    } else if (target.name === 'long' || target.name === 'short') {
+      const long = readNumber(field('long'));
+      const short = readNumber(field('short'));
+      const match = PAPERS.find((p) => p.long === Math.max(long, short) && p.short === Math.min(long, short));
+      check('paper', match?.id ?? 'custom');
+    }
+    update();
+  });
+  form.addEventListener('submit', (event) => event.preventDefault());
+
+  restore();
+  update();
+</script>
