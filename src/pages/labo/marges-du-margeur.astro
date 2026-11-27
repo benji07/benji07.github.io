@@ -2,6 +2,7 @@
 import LaboTool from '../../components/LaboTool.astro';
 import {
   BOTTOMS,
+  cm,
   computeEasel,
   DEFAULTS,
   describe,
@@ -27,19 +28,12 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
 <LaboTool id="marges-du-margeur">
   <div class="tool">
     <form class="tool__form" id="easel-form">
-      <fieldset class="field">
-        <legend class="field__label">Margeur</legend>
-        <div class="seg">
-          {
-            EASELS.map((easel) => (
-              <label>
-                <input type="radio" name="easel" value={easel.id} checked={easel.id === DEFAULTS.easel} />
-                <span>{easel.label}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
+      <label class="field">
+        <span class="field__label">Margeur</span>
+        <select class="input input--wide" name="easel">
+          {EASELS.map((easel) => <option value={easel.id} selected={easel.id === DEFAULTS.easel}>{easel.label}</option>)}
+        </select>
+      </label>
 
       {
         EASELS.filter((easel) => Object.keys(easel.fixed).length > 0).map((easel) => (
@@ -60,16 +54,16 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
 
       <fieldset class="field">
         <legend class="field__label">Papier</legend>
-        <div class="seg seg--fit">
+        <select class="input input--wide" name="paper" aria-label="Format du papier">
           {
-            [...PAPERS, { id: 'custom', label: 'Autre' }].map((paper) => (
-              <label>
-                <input type="radio" name="paper" value={paper.id} checked={paper.id === DEFAULTS.paper} />
-                <span>{paper.label}</span>
-              </label>
+            PAPERS.map((paper) => (
+              <option value={paper.id} selected={paper.id === DEFAULTS.paper}>
+                {paper.label} · {cm(paper.short)} × {cm(paper.long)} cm
+              </option>
             ))
           }
-        </div>
+          <option value="custom" selected={DEFAULTS.paper === 'custom'}>Autre (taille saisie)</option>
+        </select>
         <div class="pair">
           <input class="input" name="long" aria-label="Grand côté réel de la feuille (cm)" type="text" inputmode="decimal" autocomplete="off" value={String(DEFAULTS.long).replace('.', ',')} />
           <span aria-hidden="true">×</span>
@@ -85,33 +79,19 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
         </select>
       </label>
 
-      <fieldset class="field">
-        <legend class="field__label">Cadrage</legend>
-        <div class="seg seg--fit">
-          {
-            MODES.map((mode) => (
-              <label>
-                <input type="radio" name="mode" value={mode.id} checked={mode.id === DEFAULTS.mode} />
-                <span>{mode.label}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
+      <label class="field">
+        <span class="field__label">Cadrage</span>
+        <select class="input input--wide" name="mode">
+          {MODES.map((mode) => <option value={mode.id} selected={mode.id === DEFAULTS.mode}>{mode.label}</option>)}
+        </select>
+      </label>
 
-      <fieldset class="field" data-modes="ratio size" hidden={!shown('ratio size')}>
-        <legend class="field__label">Ratio de l'image</legend>
-        <div class="seg seg--grid">
-          {
-            RATIOS.map((ratio) => (
-              <label>
-                <input type="radio" name="ratio" value={ratio.id} checked={ratio.id === DEFAULTS.ratio} />
-                <span>{ratio.label}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
+      <label class="field" data-modes="ratio size" hidden={!shown('ratio size')}>
+        <span class="field__label">Ratio de l'image</span>
+        <select class="input input--wide" name="ratio">
+          {RATIOS.map((ratio) => <option value={ratio.id} selected={ratio.id === DEFAULTS.ratio}>{ratio.label}</option>)}
+        </select>
+      </label>
 
       <div class="field" data-modes="size" hidden={!shown('size')}>
         <label class="field__label" for="easel-size-input">Grand côté de l'image</label>
@@ -131,33 +111,19 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
         </div>
       </div>
 
-      <fieldset class="field">
-        <legend class="field__label">Marge du bas</legend>
-        <div class="seg">
-          {
-            BOTTOMS.map((bottom) => (
-              <label>
-                <input type="radio" name="bottom" value={bottom.value} checked={bottom.value === DEFAULTS.bottom} />
-                <span>{bottom.label}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
+      <label class="field">
+        <span class="field__label">Marge du bas</span>
+        <select class="input input--wide" name="bottom">
+          {BOTTOMS.map((bottom) => <option value={bottom.value} selected={bottom.value === DEFAULTS.bottom}>{bottom.label}</option>)}
+        </select>
+      </label>
 
-      <fieldset class="field">
-        <legend class="field__label">Sens du margeur</legend>
-        <div class="seg">
-          {
-            ORIENTATIONS.map((o) => (
-              <label>
-                <input type="radio" name="orientation" value={o.id} checked={o.id === DEFAULTS.orientation} />
-                <span>{o.label}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
+      <label class="field">
+        <span class="field__label">Sens du margeur</span>
+        <select class="input input--wide" name="orientation">
+          {ORIENTATIONS.map((o) => <option value={o.id} selected={o.id === DEFAULTS.orientation}>{o.label}</option>)}
+        </select>
+      </label>
     </form>
 
     <section class="tool__result">
@@ -193,42 +159,6 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
 </LaboTool>
 
 <style>
-  /* Barres de choix qui tiennent dans la colonne : libellés sur deux
-     lignes si besoin, ou grille de trois colonnes. */
-  .seg--fit,
-  .seg--grid {
-    width: 100%;
-  }
-
-  .seg--fit {
-    grid-auto-columns: minmax(0, 1fr);
-  }
-
-  .seg--fit span,
-  .seg--grid span {
-    min-width: 0;
-    padding: 4px 6px;
-    white-space: normal;
-    text-align: center;
-  }
-
-  .seg--grid {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1px;
-    background: var(--fg);
-  }
-
-  .seg--grid label span {
-    border-left: 0;
-    background: var(--bg);
-  }
-
-  .seg--grid input:checked + span {
-    background: var(--fg);
-    color: var(--on-fg);
-  }
-
   .pair {
     display: flex;
     flex-wrap: wrap;
@@ -382,9 +312,12 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
   const KEY = 'margeur';
   const form = document.querySelector<HTMLFormElement>('#easel-form')!;
   const field = <T extends Element = HTMLInputElement>(name: string) => form.querySelector<T>(`[name="${name}"]`)!;
-  const radios = (name: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)];
-  const checked = (name: string) => radios(name).find((r) => r.checked)?.value ?? '';
-  const check = (name: string, value: string) => radios(name).forEach((r) => (r.checked = r.value === value));
+  const select = (name: string) => field<HTMLSelectElement>(name);
+  const checked = (name: string) => select(name).value;
+  /** Choisit une option si elle existe. */
+  const check = (name: string, value: string) => {
+    if ([...select(name).options].some((o) => o.value === value)) select(name).value = value;
+  };
   const fr = (x: number) => String(x).replace('.', ',');
 
   const sizeOut = document.querySelector<HTMLOutputElement>('#easel-size')!;
@@ -418,7 +351,7 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
       paper: checked('paper'),
       long: readNumber(field('long')),
       short: readNumber(field('short')),
-      negative: field<HTMLSelectElement>('negative').value,
+      negative: checked('negative'),
       mode: checked('mode') as Mode,
       ratio: checked('ratio'),
       size: readNumber(field('size')),
@@ -432,11 +365,10 @@ const shown = (modes: string) => modes.split(' ').includes(DEFAULTS.mode);
     const s = load<EaselSettings>(KEY);
     if (!s) return;
     for (const name of ['easel', 'paper', 'mode', 'ratio', 'orientation'] as const) {
-      if (typeof s[name] === 'string' && radios(name).some((r) => r.value === s[name])) check(name, s[name]);
+      if (typeof s[name] === 'string') check(name, s[name]);
     }
-    if (typeof s.bottom === 'number' && radios('bottom').some((r) => Number(r.value) === s.bottom)) check('bottom', String(s.bottom));
-    const negative = field<HTMLSelectElement>('negative');
-    if ([...negative.options].some((o) => o.value === s.negative)) negative.value = s.negative!;
+    if (typeof s.bottom === 'number') check('bottom', String(s.bottom));
+    if (typeof s.negative === 'string') check('negative', s.negative);
     for (const name of ['long', 'short', 'size', 'margin'] as const) {
       if (typeof s[name] === 'number' && Number.isFinite(s[name])) field(name).value = fr(s[name]);
     }

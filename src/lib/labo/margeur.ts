@@ -58,7 +58,7 @@ export const NEGATIVES = [
 
 /** Ratios de recadrage ; `neg` : celui du négatif. */
 export const RATIOS = [
-  { id: 'neg', label: 'Négatif', value: 0 },
+  { id: 'neg', label: 'Celui du négatif', value: 0 },
   { id: '3:2', label: '3:2', value: 3 / 2 },
   { id: '4:3', label: '4:3', value: 4 / 3 },
   { id: '5:4', label: '5:4', value: 5 / 4 },
@@ -67,22 +67,22 @@ export const RATIOS = [
 ];
 
 export const MODES: { id: Mode; label: string }[] = [
-  { id: 'equal', label: 'Marges égales' },
-  { id: 'ratio', label: 'Ratio gardé' },
-  { id: 'size', label: 'Grand côté' },
+  { id: 'equal', label: 'Marges égales (recadrage)' },
+  { id: 'ratio', label: 'Ratio gardé, marge mini' },
+  { id: 'size', label: 'Grand côté imposé' },
 ];
 
 /** Marge du bas : facteur appliqué à la marge du haut. */
 export const BOTTOMS = [
-  { value: 1, label: 'Égale' },
-  { value: 1.25, label: '×1,25' },
-  { value: 1.5, label: '×1,5' },
+  { value: 1, label: 'Égale au haut' },
+  { value: 1.25, label: '1,25 × le haut' },
+  { value: 1.5, label: '1,5 × le haut' },
 ];
 
 export const ORIENTATIONS: { id: Orientation; label: string }[] = [
-  { id: 'auto', label: 'Proposée' },
+  { id: 'auto', label: "Proposé par l'outil" },
   { id: 'normal', label: 'Normal' },
-  { id: 'rotated', label: 'Tourné' },
+  { id: 'rotated', label: 'Tourné de 90°' },
 ];
 
 export interface EaselSettings {
