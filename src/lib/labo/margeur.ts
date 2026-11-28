@@ -39,14 +39,23 @@ export const STYLES: { id: Style; label: string }[] = [
 ];
 
 export const EASELS: { id: EaselType; label: string }[] = [
-  { id: '2', label: '2 lames · haut et gauche fixes' },
-  { id: '3', label: '3 lames · côté fixe réglable de 0,5 à 5 cm' },
-  { id: '4', label: '4 lames · tout est réglable' },
+  { id: '2', label: '2 lames' },
+  { id: '3', label: '3 lames' },
+  { id: '4', label: '4 lames' },
 ];
 
-/** Plus petite marge possible ; plafond du côté fixe d'un 3 lames ; facteur galerie. */
+/** Description du margeur choisi, pour le repli « Mon margeur ». */
+export function easelSummary(s: Settings): string {
+  if (s.easel === '2') return `2 lames · haut et gauche fixes à ${cm(s.fix2)} cm`;
+  if (s.easel === '3') {
+    const [min, max] = fixedRange(s);
+    return `3 lames · côté fixe réglable de ${cm(min)} à ${cm(max)} cm`;
+  }
+  return '4 lames · tout est réglable';
+}
+
+/** Plus petite marge possible ; facteur galerie. */
 export const MIN = 0.5;
-const FIXED_MAX = 5;
 const GALLERY = 1.5;
 
 export interface Settings {
@@ -60,6 +69,16 @@ export interface Settings {
   easel: EaselType;
   /** Marges fixes d'un margeur 2 lames. */
   fix2: number;
+  /** Plage de réglage du côté fixe d'un margeur 3 lames. */
+  fixMin: number;
+  fixMax: number;
+}
+
+/** Plage du côté fixe d'un 3 lames, bornes remises dans l'ordre. */
+function fixedRange(s: Settings): [number, number] {
+  const a = Math.max(s.fixMin, MIN);
+  const b = Math.max(s.fixMax, MIN);
+  return [Math.min(a, b), Math.max(a, b)];
 }
 
 export const DEFAULTS: Settings = {
@@ -70,6 +89,8 @@ export const DEFAULTS: Settings = {
   vertical: false,
   easel: '3',
   fix2: 1,
+  fixMin: 0.5,
+  fixMax: 5,
 };
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
@@ -114,8 +135,11 @@ export function compute(s: Settings): Outcome {
   // Seule la marge de côté est imposée ; sans recadrage, haut et bas peuvent
   // descendre jusqu'au minimum physique.
   const fv = s.style === 'equal' ? m : MIN;
+  // Le côté fixe d'un 3 lames ne descend pas sous son minimum.
+  const [fixMin, fixMax] = fixedRange(s);
+  const topFloor = s.easel === '3' ? Math.max(fv, fixMin) : fv;
   const aw = W - m * (1 + kx);
-  const ah = H - fv * (1 + ky);
+  const ah = H - topFloor - fv * ky;
   if (!(aw > 1 && ah > 1)) return { error: 'Marge trop grande pour cette feuille.' };
 
   let img: { w: number; h: number };
@@ -139,10 +163,14 @@ export function compute(s: Settings): Outcome {
     hints.push(`Ici c'est la hauteur de la feuille qui limite l'image : les marges de côté passent à ${cm(margins.left)} cm.`);
   }
   const fixed: Result['fixed'] = s.easel === '3' ? { top: true } : s.easel === '2' ? { top: true, left: true } : {};
-  if (s.easel === '3' && margins.top > FIXED_MAX) {
-    margins.bottom = r1(fh - FIXED_MAX);
-    margins.top = FIXED_MAX;
-    hints.push("Le côté fixe plafonne à 5 cm : l'image remonte, le reste de la marge passe en bas.");
+  if (s.easel === '3' && margins.top > fixMax) {
+    margins.bottom = r1(fh - fixMax);
+    margins.top = fixMax;
+    hints.push(`Le côté fixe plafonne à ${cm(fixMax)} cm : l'image remonte, le reste de la marge passe en bas.`);
+  } else if (s.easel === '3' && margins.top < fixMin) {
+    margins.bottom = r1(fh - fixMin);
+    margins.top = fixMin;
+    hints.push(`Le côté fixe ne descend pas sous ${cm(fixMin)} cm : l'image descend d'autant.`);
   }
   if (s.easel === '2') {
     const off = margins.top !== m || margins.left !== m;
@@ -247,40 +275,55 @@ export function negativeThumb(n: (typeof NEGATIVES)[number]): string {
   return svg(42, 28, `<rect class="t-neg" x="${(42 - w) / 2}" y="${(28 - h) / 2}" width="${w}" height="${h}" rx="1"/>`);
 }
 
-/** Petite feuille avec son image, pour comparer les cadrages. */
+/**
+ * Petite feuille avec son image, pour comparer les cadrages ; vue de devant,
+ * donc en hauteur quand le margeur est tourné.
+ */
 export function mini(res: Outcome, size: number): string {
   if ('error' in res) return svg(size, size * 0.75, '');
   const k = size / res.W;
+  const { W, H, img, margins: m } = res;
+  const [pw, ph, x, y, iw, ih] = res.rotated
+    ? [H, W, H - m.top - img.h, m.left, img.h, img.w]
+    : [W, H, m.left, m.top, img.w, img.h];
   return svg(
-    res.W * k + 2,
-    res.H * k + 2,
-    `<g transform="translate(1 1)"><rect class="t-paper" width="${res.W * k}" height="${res.H * k}"/><rect class="t-img" x="${res.margins.left * k}" y="${res.margins.top * k}" width="${res.img.w * k}" height="${res.img.h * k}"/></g>`,
+    pw * k + 2,
+    ph * k + 2,
+    `<g transform="translate(1 1)"><rect class="t-paper" width="${pw * k}" height="${ph * k}"/><rect class="t-img" x="${x * k}" y="${y * k}" width="${iw * k}" height="${ih * k}"/></g>`,
   );
 }
 
 const NAMES: Record<Side, string> = { top: 'haut', bottom: 'bas', left: 'gauche', right: 'droite' };
+/** Côté vu de devant d'un côté du margeur tourné d'un quart de tour. */
+const TURNED: Record<Side, Side> = { top: 'right', right: 'bottom', bottom: 'left', left: 'top' };
 
 /**
- * Schéma à l'échelle, dans le repère du margeur : feuille, image, lames
+ * Schéma à l'échelle, vu de devant l'agrandisseur : feuille, image, lames
  * numérotées comme la liste, poignées sur les lames gauche et droite, et en
- * hachures la partie du négatif qui tombe sur les lames.
- * `toMargin` convertit une position de pointeur en marge du côté glissé.
+ * hachures la partie du négatif qui tombe sur les lames. Margeur tourné, tout
+ * pivote d'un quart de tour (le côté fixe passe à droite), les lames gardent
+ * leur nom. `toMargin` convertit une position de pointeur en marge.
  */
 export function draw(res: Result, cw: number, maxH: number, badges: Partial<Record<Side, number>>) {
+  const rot = res.rotated;
+  const { W, H, img, margins: m } = res;
+  const vw = rot ? H : W;
+  const vh = rot ? W : H;
   const padX = 50;
   const padY = 46;
-  const s = Math.min((cw - 2 * padX) / res.W, (maxH - 2 * padY) / res.H);
-  const w = res.W * s;
-  const h = res.H * s;
+  const s = Math.min((cw - 2 * padX) / vw, (maxH - 2 * padY) / vh);
+  const w = vw * s;
+  const h = vh * s;
   const ox = (cw - w) / 2;
   const oy = padY;
-  const P = (x: number, y: number) => [ox + x * s, oy + y * s];
+  // Repère du margeur (x le long du côté fixe, y vers le bas) → pixels.
+  const P = (x: number, y: number) => (rot ? [ox + (H - y) * s, oy + x * s] : [ox + x * s, oy + y * s]);
   const R = (x0: number, y0: number, x1: number, y1: number, attrs: string) => {
     const [ax, ay] = P(x0, y0);
     const [bx, by] = P(x1, y1);
     return `<rect ${attrs} x="${Math.min(ax, bx)}" y="${Math.min(ay, by)}" width="${Math.abs(ax - bx)}" height="${Math.abs(ay - by)}"/>`;
   };
-  const { W, H, img, margins: m } = res;
+  const view = (side: Side) => (rot ? TURNED[side] : side);
   const ix = m.left;
   const iy = m.top;
   const out: string[] = [
@@ -303,8 +346,10 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
     for (const z of zones) out.push(R(...z, 'class="s-lost"'), R(...z, 'fill="url(#margeur-hatch)"'));
   }
   out.push(R(ix, iy, ix + img.w, iy + img.h, 'class="s-img"'));
+  // Taille de l'image telle qu'on la voit : largeur × hauteur vues de devant.
   const [cx, cy] = P(ix + img.w / 2, iy + img.h / 2);
-  out.push(`<text class="s-size${img.w * s < 120 ? ' s-size--s' : ''}" x="${cx}" y="${cy - 2}">${cm(img.w)} × ${cm(img.h)}</text>`);
+  const [iw, ih] = rot ? [img.h, img.w] : [img.w, img.h];
+  out.push(`<text class="s-size${iw * s < 120 ? ' s-size--s' : ''}" x="${cx}" y="${cy - 2}">${cm(iw)} × ${cm(ih)}</text>`);
   if (res.style === 'gallery') {
     const [gx, gy] = res.vertical ? P(ix + img.w - 16 / s, iy + img.h / 2) : P(ix + img.w / 2, iy + img.h - 12 / s);
     out.push(`<text class="s-cap" x="${gx}" y="${gy}">bas</text>`);
@@ -330,16 +375,17 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
     const f = Boolean(res.fixed[side]);
     out.push(R(...blades[side](f ? tf : t), `class="s-blade${f ? ' s-blade--fixed' : ''}"`));
   }
-  // Marges écrites hors de la feuille, en face de chaque lame.
+  // Marges écrites hors de la feuille, en face de chaque lame, avec son nom.
   const lab: Record<Side, [number, number]> = { top: [W / 2, 0], bottom: [W / 2, H], left: [0, H / 2], right: [W, H / 2] };
   for (const side of order) {
     let [x, y] = P(...lab[side]);
+    const v = view(side);
     const f = Boolean(res.fixed[side]);
-    if (side === 'top') y -= 26;
-    if (side === 'bottom') y += 28;
-    if (side === 'left') x -= 27;
-    if (side === 'right') x += 27;
-    const lr = side === 'left' || side === 'right';
+    if (v === 'top') y -= 26;
+    if (v === 'bottom') y += 28;
+    if (v === 'left') x -= 27;
+    if (v === 'right') x += 27;
+    const lr = v === 'left' || v === 'right';
     const cap = f ? (lr ? 'fixe' : 'côté fixe') : NAMES[side];
     out.push(
       lr
@@ -350,25 +396,28 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
   for (const side of order) {
     const f = Boolean(res.fixed[side]);
     const [qx, qy] = P(...mid[side](f ? tf : t));
+    const v = view(side);
+    const horiz = v === 'top' || v === 'bottom';
     const n = badges[side];
     if (n) {
       // Décalé du milieu pour laisser la place à la poignée.
-      const dx = side === 'top' || side === 'bottom' ? -w * 0.3 : 0;
-      const dy = side === 'left' || side === 'right' ? -h * 0.3 : 0;
+      const dx = horiz ? -w * 0.3 : 0;
+      const dy = horiz ? 0 : -h * 0.3;
       out.push(`<circle class="s-badge" cx="${qx + dx}" cy="${qy + dy}" r="11"/><text class="s-badge-t" x="${qx + dx}" y="${qy + dy}">${n}</text>`);
     }
     if ((side === 'left' || side === 'right') && res.easel !== '2') {
+      const grip = horiz ? `M${qx - 4} ${qy - 2}h8M${qx - 4} ${qy + 2}h8` : `M${qx - 2} ${qy - 4}v8M${qx + 2} ${qy - 4}v8`;
       out.push(
-        `<g class="s-handle" data-side="${side}"><circle class="s-hit" cx="${qx}" cy="${qy}" r="22"/><circle class="s-knob" cx="${qx}" cy="${qy}" r="11"/><path class="s-grip" d="M${qx - 2} ${qy - 4}v8M${qx + 2} ${qy - 4}v8"/></g>`,
+        `<g class="s-handle" data-side="${side}" style="cursor:${horiz ? 'ns' : 'ew'}-resize"><circle class="s-hit" cx="${qx}" cy="${qy}" r="22"/><circle class="s-knob" cx="${qx}" cy="${qy}" r="11"/><path class="s-grip" d="${grip}"/></g>`,
       );
     }
   }
   const H2 = h + 2 * padY;
   return {
-    svg: `<svg class="schema" width="${cw}" height="${H2}" viewBox="0 0 ${cw} ${H2}" role="img" aria-label="Feuille ${res.paper.label}, image de ${cm(img.w)} × ${cm(img.h)} cm">${out.join('')}</svg>`,
+    svg: `<svg class="schema" width="${cw}" height="${H2}" viewBox="0 0 ${cw} ${H2}" role="img" aria-label="Feuille ${res.paper.label}, image de ${cm(iw)} × ${cm(ih)} cm">${out.join('')}</svg>`,
     /** Position du pointeur (px dans le schéma) → marge du côté glissé. */
-    toMargin(side: Side, px: number) {
-      const x = (px - ox) / s;
+    toMargin(side: Side, px: number, py: number) {
+      const x = rot ? (py - oy) / s : (px - ox) / s;
       return side === 'left' ? x : W - x;
     },
   };
