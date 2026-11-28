@@ -383,10 +383,6 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
   const [cx, cy] = P(ix + img.w / 2, iy + img.h / 2);
   const [iw, ih] = rot ? [img.h, img.w] : [img.w, img.h];
   out.push(`<text class="s-size${iw * s < 120 ? ' s-size--s' : ''}" x="${cx}" y="${cy - 2}">${cm(iw)} × ${cm(ih)}</text>`);
-  if (res.style === 'gallery') {
-    const [gx, gy] = res.vertical ? P(ix + img.w - 16 / s, iy + img.h / 2) : P(ix + img.w / 2, iy + img.h - 12 / s);
-    out.push(`<text class="s-cap" x="${gx}" y="${gy}">bas</text>`);
-  }
 
   const t = 9 / s;
   const tf = 14 / s;
