@@ -72,6 +72,8 @@ export interface Settings {
   /** Plage de réglage du côté fixe d'un margeur 3 lames. */
   fixMin: number;
   fixMax: number;
+  /** Margeur tourné : côté fixe à droite ou à gauche (sens du quart de tour). */
+  turn: 'right' | 'left';
 }
 
 /** Plage du côté fixe d'un 3 lames, bornes remises dans l'ordre. */
@@ -91,6 +93,7 @@ export const DEFAULTS: Settings = {
   fix2: 1,
   fixMin: 0.5,
   fixMax: 5,
+  turn: 'right',
 };
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
@@ -115,8 +118,9 @@ export interface Result {
   style: Style;
   vertical: boolean;
   easel: EaselType;
-  /** Margeur à poser tourné d'un quart de tour. */
+  /** Margeur à poser tourné d'un quart de tour, et de quel côté va le côté fixe. */
   rotated: boolean;
+  turn: 'right' | 'left';
   hints: string[];
 }
 
@@ -197,6 +201,7 @@ export function compute(s: Settings): Outcome {
     vertical: s.vertical,
     easel: s.easel,
     rotated: neg.portrait,
+    turn: s.turn === 'left' ? 'left' : 'right',
     hints,
   };
 }
@@ -283,9 +288,11 @@ export function mini(res: Outcome, size: number): string {
   if ('error' in res) return svg(size, size * 0.75, '');
   const k = size / res.W;
   const { W, H, img, margins: m } = res;
-  const [pw, ph, x, y, iw, ih] = res.rotated
-    ? [H, W, H - m.top - img.h, m.left, img.h, img.w]
-    : [W, H, m.left, m.top, img.w, img.h];
+  const [pw, ph, x, y, iw, ih] = !res.rotated
+    ? [W, H, m.left, m.top, img.w, img.h]
+    : res.turn === 'right'
+      ? [H, W, H - m.top - img.h, m.left, img.h, img.w]
+      : [H, W, m.top, W - m.left - img.w, img.h, img.w];
   return svg(
     pw * k + 2,
     ph * k + 2,
@@ -293,19 +300,22 @@ export function mini(res: Outcome, size: number): string {
   );
 }
 
-const NAMES: Record<Side, string> = { top: 'haut', bottom: 'bas', left: 'gauche', right: 'droite' };
-/** Côté vu de devant d'un côté du margeur tourné d'un quart de tour. */
-const TURNED: Record<Side, Side> = { top: 'right', right: 'bottom', bottom: 'left', left: 'top' };
+/** Côté vu de devant d'un côté du margeur tourné, côté fixe à droite ou à gauche. */
+const TURNED: Record<'right' | 'left', Record<Side, Side>> = {
+  right: { top: 'right', right: 'bottom', bottom: 'left', left: 'top' },
+  left: { top: 'left', left: 'bottom', bottom: 'right', right: 'top' },
+};
 
 /**
  * Schéma à l'échelle, vu de devant l'agrandisseur : feuille, image, lames
  * numérotées comme la liste, poignées sur les lames gauche et droite, et en
  * hachures la partie du négatif qui tombe sur les lames. Margeur tourné, tout
- * pivote d'un quart de tour (le côté fixe passe à droite), les lames gardent
- * leur nom. `toMargin` convertit une position de pointeur en marge.
+ * pivote d'un quart de tour (le côté fixe passe à droite ou à gauche), les
+ * lames gardent leur nom. `toMargin` convertit une position de pointeur en marge.
  */
 export function draw(res: Result, cw: number, maxH: number, badges: Partial<Record<Side, number>>) {
   const rot = res.rotated;
+  const cw90 = res.turn === 'right';
   const { W, H, img, margins: m } = res;
   const vw = rot ? H : W;
   const vh = rot ? W : H;
@@ -317,13 +327,14 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
   const ox = (cw - w) / 2;
   const oy = padY;
   // Repère du margeur (x le long du côté fixe, y vers le bas) → pixels.
-  const P = (x: number, y: number) => (rot ? [ox + (H - y) * s, oy + x * s] : [ox + x * s, oy + y * s]);
+  const P = (x: number, y: number) =>
+    !rot ? [ox + x * s, oy + y * s] : cw90 ? [ox + (H - y) * s, oy + x * s] : [ox + y * s, oy + (W - x) * s];
   const R = (x0: number, y0: number, x1: number, y1: number, attrs: string) => {
     const [ax, ay] = P(x0, y0);
     const [bx, by] = P(x1, y1);
     return `<rect ${attrs} x="${Math.min(ax, bx)}" y="${Math.min(ay, by)}" width="${Math.abs(ax - bx)}" height="${Math.abs(ay - by)}"/>`;
   };
-  const view = (side: Side) => (rot ? TURNED[side] : side);
+  const view = (side: Side) => (rot ? TURNED[res.turn][side] : side);
   const ix = m.left;
   const iy = m.top;
   const out: string[] = [
@@ -386,11 +397,14 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
     if (v === 'left') x -= 27;
     if (v === 'right') x += 27;
     const lr = v === 'left' || v === 'right';
-    const cap = f ? (lr ? 'fixe' : 'côté fixe') : NAMES[side];
+    // Seul le côté fixe est nommé : les numéros renvoient à la liste.
+    const cap = f ? (lr ? 'fixe' : 'côté fixe') : '';
     out.push(
-      lr
-        ? `<text class="s-m" x="${x}" y="${y - 7}">${cm(m[side])}</text><text class="s-cap" x="${x}" y="${y + 9}">${cap}</text>`
-        : `<text class="s-m" x="${x}" y="${y}">${cm(m[side])}<tspan class="s-cap" dx="6">${cap}</tspan></text>`,
+      !cap
+        ? `<text class="s-m" x="${x}" y="${y}">${cm(m[side])}</text>`
+        : lr
+          ? `<text class="s-m" x="${x}" y="${y - 7}">${cm(m[side])}</text><text class="s-cap" x="${x}" y="${y + 9}">${cap}</text>`
+          : `<text class="s-m" x="${x}" y="${y}">${cm(m[side])}<tspan class="s-cap" dx="6">${cap}</tspan></text>`,
     );
   }
   for (const side of order) {
@@ -417,16 +431,16 @@ export function draw(res: Result, cw: number, maxH: number, badges: Partial<Reco
     svg: `<svg class="schema" width="${cw}" height="${H2}" viewBox="0 0 ${cw} ${H2}" role="img" aria-label="Feuille ${res.paper.label}, image de ${cm(iw)} × ${cm(ih)} cm">${out.join('')}</svg>`,
     /** Position du pointeur (px dans le schéma) → marge du côté glissé. */
     toMargin(side: Side, px: number, py: number) {
-      const x = rot ? (py - oy) / s : (px - ox) / s;
+      const x = !rot ? (px - ox) / s : cw90 ? (py - oy) / s : W - (py - oy) / s;
       return side === 'left' ? x : W - x;
     },
   };
 }
 
 /** Où poser le margeur sous l'agrandisseur (colonne en haut). */
-export function picto(rotated: boolean): string {
+export function picto(rotated: boolean, turn: 'right' | 'left' = 'right'): string {
   const body = rotated
-    ? `<rect class="p-easel" x="27" y="18" width="42" height="56"/><rect class="p-fixed" x="65" y="18" width="5" height="56"/><rect class="t-img" x="33" y="25" width="27" height="42"/>`
+    ? `<rect class="p-easel" x="27" y="18" width="42" height="56"/><rect class="p-fixed" x="${turn === 'right' ? 65 : 26}" y="18" width="5" height="56"/><rect class="t-img" x="${turn === 'right' ? 33 : 36}" y="25" width="27" height="42"/>`
     : `<rect class="p-easel" x="20" y="24" width="56" height="42"/><rect class="p-fixed" x="20" y="23" width="56" height="5"/><rect class="t-img" x="27" y="33" width="42" height="27"/>`;
   return svg(96, 80, `<rect class="p-col" x="40" y="2" width="16" height="8"/>${body}`);
 }

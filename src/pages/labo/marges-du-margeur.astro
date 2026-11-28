@@ -77,6 +77,13 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
         <label class="fix2" id="m-fix2">
           Marges fixes <input type="text" inputmode="decimal" autocomplete="off" value="1,0" /> cm
         </label>
+        <div class="m-turn-pick">
+          <span class="fix2">Margeur tourné : côté fixe</span>
+          <div class="m-seg" id="m-turn-side">
+            <button type="button" data-turn="right">à droite</button>
+            <button type="button" data-turn="left">à gauche</button>
+          </div>
+        </div>
         <div class="fix2" id="m-fix3">
           Côté fixe : de
           <input type="text" inputmode="decimal" autocomplete="off" value="0,5" aria-label="Marge minimale du côté fixe (cm)" data-bound="fixMin" />
@@ -605,6 +612,13 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     font-weight: 600;
   }
 
+  .m-turn-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
   .fix2 input {
     width: 72px;
     height: 44px;
@@ -697,6 +711,7 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     if (typeof stored.margin === 'number' && stored.margin >= MIN && stored.margin <= 15) state.margin = stored.margin;
     if (typeof stored.fix2 === 'number' && stored.fix2 >= MIN && stored.fix2 <= 15) state.fix2 = stored.fix2;
     if (typeof stored.vertical === 'boolean') state.vertical = stored.vertical;
+    if (stored.turn === 'left' || stored.turn === 'right') state.turn = stored.turn;
     for (const k of ['fixMin', 'fixMax'] as const) {
       const v = stored[k];
       if (typeof v === 'number' && v >= MIN && v <= 15) state[k] = v;
@@ -730,6 +745,7 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     pressed($('m-papers'), '.pick', (b) => b.dataset.id === state.paper);
     pressed($('m-negs'), '.pick', (b) => b.dataset.id === state.negative);
     pressed(easel, '[data-easel]', (b) => b.dataset.easel === state.easel);
+    pressed(easel, '[data-turn]', (b) => b.dataset.turn === state.turn);
     $('m-easel-sum').textContent = easelSummary(state);
     $('m-fix2').hidden = !two;
     $('m-fix3').hidden = state.easel !== '3';
@@ -753,7 +769,7 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     const turn = $('m-turn');
     turn.hidden = 'error' in res || !res.rotated;
     if (!('error' in res) && res.rotated) {
-      turn.innerHTML = `Le ${res.negative.label} se projette en hauteur : <b>tourne le margeur d'un quart de tour</b>, côté fixe à droite.`;
+      turn.innerHTML = `Le ${res.negative.label} se projette en hauteur : <b>tourne le margeur d'un quart de tour</b>, côté fixe à ${res.turn === 'right' ? 'droite' : 'gauche'}.`;
     }
     if ('error' in res) {
       current = undefined;
@@ -777,9 +793,9 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
 
   function notes(res: Result): string[] {
     const out = [
-      `<div class="orient">${picto(res.rotated)}<span>${
+      `<div class="orient">${picto(res.rotated, res.turn)}<span>${
         res.rotated
-          ? "Margeur tourné d'un quart de tour sous l'agrandisseur, côté fixe à droite. Le schéma le montre vu de devant ; les lames gardent leur nom."
+          ? `Margeur tourné d'un quart de tour sous l'agrandisseur, côté fixe à ${res.turn === 'right' ? 'droite' : 'gauche'}. Le schéma le montre vu de devant ; les lames gardent leur nom.`
           : "Margeur à l'endroit sous l'agrandisseur, côté fixe au fond."
       }</span></div>`,
     ];
@@ -812,6 +828,8 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
   easel.addEventListener('click', (e) => {
     const b = (e.target as Element).closest<HTMLElement>('[data-easel]');
     if (b) (state.easel = b.dataset.easel as Settings['easel']), render();
+    const t = (e.target as Element).closest<HTMLElement>('[data-turn]');
+    if (t) (state.turn = t.dataset.turn as Settings['turn']), render();
   });
   fix2.addEventListener('input', () => {
     const v = readNumber(fix2.value);
