@@ -21,15 +21,15 @@ export const PAPERS = [
   { id: '30x40', label: '30×40', long: 40.6, short: 30.5 },
 ];
 
-/** Négatifs : grand et petit côté de la vue (mm) ; `portrait` : projeté en hauteur. */
+/** Négatifs, du plus petit au plus grand : grand et petit côté de la vue (mm) ; `portrait` : projeté en hauteur. */
 export const NEGATIVES = [
+  { id: '18x24', label: '18×24', long: 24, short: 18, portrait: true },
   { id: '24x36', label: '24×36', long: 36, short: 24, portrait: false },
+  { id: '24x65', label: 'XPan', long: 65, short: 24, portrait: false },
   { id: '45x6', label: '4,5×6', long: 56, short: 42, portrait: true },
   { id: '6x6', label: '6×6', long: 56, short: 56, portrait: false },
   { id: '6x7', label: '6×7', long: 69, short: 56, portrait: false },
   { id: '6x9', label: '6×9', long: 84, short: 56, portrait: false },
-  { id: '18x24', label: '18×24', long: 24, short: 18, portrait: true },
-  { id: '24x65', label: 'XPan', long: 65, short: 24, portrait: false },
 ];
 
 export const STYLES: { id: Style; label: string }[] = [
