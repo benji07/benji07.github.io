@@ -2,7 +2,7 @@
 // taille de l'image en découle, entière ou recadrée.
 //
 // Tout est calculé dans le repère du margeur : feuille en largeur, côté fixe
-// en haut. Le négatif décide seulement du sens de pose : en hauteur (4,5 × 6,
+// en haut. Le négatif décide seulement du sens de pose : en hauteur (6 × 4,5,
 // demi-format), le margeur se pose tourné d'un quart de tour.
 // Toutes les longueurs sont en centimètres.
 
@@ -26,7 +26,7 @@ export const NEGATIVES = [
   { id: '18x24', label: '18×24', long: 24, short: 18, portrait: true },
   { id: '24x36', label: '24×36', long: 36, short: 24, portrait: false },
   { id: '24x65', label: 'XPan', long: 65, short: 24, portrait: false },
-  { id: '45x6', label: '4,5×6', long: 56, short: 42, portrait: true },
+  { id: '45x6', label: '6×4,5', long: 56, short: 42, portrait: true },
   { id: '6x6', label: '6×6', long: 56, short: 56, portrait: false },
   { id: '6x7', label: '6×7', long: 69, short: 56, portrait: false },
   { id: '6x9', label: '6×9', long: 84, short: 56, portrait: false },
