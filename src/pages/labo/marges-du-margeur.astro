@@ -1,0 +1,909 @@
+---
+import LaboTool from '../../components/LaboTool.astro';
+import { DEFAULTS, EASELS, ENLARGERS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '../../lib/labo/margeur';
+
+// Les vignettes de papier et de négatif sont rendues ici ; le schéma, les
+// cadrages et la liste dépendent de la largeur et des réglages mémorisés :
+// le script les dessine.
+---
+
+<LaboTool id="marges-du-margeur">
+  <div class="margeur" id="margeur">
+    <div class="m-picks">
+      <div>
+        <p class="label-s m-label" id="m-paper-label">Papier</p>
+        <div class="picks picks--paper" id="m-papers" role="group" aria-labelledby="m-paper-label">
+          {
+            PAPERS.map((p) => (
+              <button type="button" class="pick" data-id={p.id} aria-pressed={String(p.id === DEFAULTS.paper)}>
+                <Fragment set:html={paperThumb(p)} />
+                <span>{p.label}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div>
+        <p class="label-s m-label" id="m-neg-label">Négatif</p>
+        <div class="picks picks--neg" id="m-negs" role="group" aria-labelledby="m-neg-label">
+          {
+            NEGATIVES.map((n) => (
+              <button type="button" class="pick" data-id={n.id} aria-pressed={String(n.id === DEFAULTS.negative)}>
+                <Fragment set:html={negativeThumb(n)} />
+                <span>{n.label}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="m-stage" id="m-stage">
+      <p class="m-turn" id="m-turn" hidden></p>
+      <div id="m-schema"></div>
+      <div class="marge">
+        <label for="m-margin">Marge à gauche et à droite<small>glisse une lame, ou tape la valeur</small></label>
+        <div class="step">
+          <button type="button" id="m-minus" aria-label="Moins 0,5 cm">−</button>
+          <span class="step__val"><input id="m-margin" type="text" inputmode="decimal" autocomplete="off" value="1,0" />cm</span>
+          <button type="button" id="m-plus" aria-label="Plus 0,5 cm">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="m-crop">
+      <p class="label-s m-label" id="m-style-label">Cadrage</p>
+      <div class="styles" id="m-styles" role="group" aria-labelledby="m-style-label"></div>
+      <div class="m-seg" id="m-vertical" hidden>
+        <button type="button" data-v="0">Photo en largeur</button>
+        <button type="button" data-v="1">en hauteur</button>
+      </div>
+    </div>
+
+    <div class="m-todo">
+      <div>
+        <p class="label-s m-label">À régler sur le margeur, en cm</p>
+        <ol class="todo" id="m-todo"></ol>
+      </div>
+      <div class="notes" id="m-notes"></div>
+    </div>
+
+    <details class="m-easel" id="m-easel">
+      <summary>Mon matériel : <b id="m-easel-sum"></b> <span class="m-link">changer</span></summary>
+      <div class="m-easel__body">
+        <div class="m-turn-pick">
+          <span class="fix2">Agrandisseur jusqu'au</span>
+          <div class="m-seg">
+            {ENLARGERS.map((e) => <button type="button" data-enlarger={e.id}>{e.label}</button>)}
+          </div>
+        </div>
+        <div class="m-turn-pick">
+          <span class="fix2">Margeur</span>
+          <div class="m-seg">
+            {EASELS.map((e) => <button type="button" data-easel={e.id}>{e.id} lames</button>)}
+          </div>
+        </div>
+        <label class="fix2" id="m-fix2">
+          Marges fixes <input type="text" inputmode="decimal" autocomplete="off" value="1,0" /> cm
+        </label>
+        <div class="m-turn-pick">
+          <span class="fix2">Margeur tourné : côté fixe</span>
+          <div class="m-seg" id="m-turn-side">
+            <button type="button" data-turn="right">à droite</button>
+            <button type="button" data-turn="left">à gauche</button>
+          </div>
+        </div>
+        <div class="fix2" id="m-fix3">
+          Côté fixe : de
+          <input type="text" inputmode="decimal" autocomplete="off" value="0,5" aria-label="Marge minimale du côté fixe (cm)" data-bound="fixMin" />
+          à
+          <input type="text" inputmode="decimal" autocomplete="off" value="5,0" aria-label="Marge maximale du côté fixe (cm)" data-bound="fixMax" />
+          cm
+        </div>
+      </div>
+    </details>
+  </div>
+</LaboTool>
+
+<style>
+  .margeur {
+    /* Gris de l'image sur la feuille. */
+    --img: #cfd3d9;
+    --paper: var(--bg);
+    --img-ink: #111214;
+
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    gap: 24px var(--gap-columns);
+    align-items: start;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .margeur {
+      --img: #5a5f67;
+      --paper: #2e3136;
+      --img-ink: var(--fg);
+    }
+  }
+
+  .m-picks {
+    grid-area: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .m-crop {
+    grid-area: 2 / 1;
+  }
+
+  .m-stage {
+    grid-area: 1 / 2 / 3 / 3;
+    min-width: 0;
+    background: var(--soft);
+  }
+
+  .m-todo {
+    grid-area: 3 / 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .m-easel {
+    grid-area: 3 / 1;
+  }
+
+  .m-label {
+    margin-bottom: 8px;
+  }
+
+  /* Vignettes de papier, de négatif et de cadrage. */
+  .picks {
+    display: grid;
+    gap: 6px;
+  }
+
+  .picks--paper {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .picks--neg {
+    grid-template-columns: repeat(var(--count, 7), 1fr);
+  }
+
+  .margeur :global(.pick[hidden]) {
+    display: none;
+  }
+
+  .margeur :global(.pick) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 68px;
+    padding: 8px 2px;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .margeur :global(.pick:hover) {
+    border-color: var(--field-line);
+  }
+
+  .margeur :global(.pick[aria-pressed='true']) {
+    border-color: var(--fg);
+    box-shadow: inset 0 0 0 1px var(--fg);
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .margeur :global(.pick:focus-visible),
+  .margeur button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .styles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .styles :global(.style) {
+    min-height: 0;
+    justify-content: flex-start;
+    padding: 10px 4px;
+    gap: 3px;
+  }
+
+  .styles :global(.mini) {
+    height: 66px;
+    display: flex;
+    align-items: center;
+  }
+
+  .styles :global(strong) {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+  }
+
+  .styles :global(em) {
+    font-style: normal;
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .margeur :global(.t-paper) {
+    fill: var(--paper);
+    stroke: var(--fg);
+    stroke-width: 1;
+  }
+
+  .margeur :global(.t-neg) {
+    fill: var(--fg);
+  }
+
+  .margeur :global(.t-img) {
+    fill: var(--img);
+  }
+
+  /* Schéma. */
+  .m-stage :global(.schema) {
+    display: block;
+    max-width: 100%;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .m-stage :global(.schema text) {
+    font-family: var(--font-mono);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .m-stage :global(.s-paper) {
+    fill: var(--paper);
+    stroke: var(--field-line);
+  }
+
+  .m-stage :global(.s-img) {
+    fill: var(--img);
+  }
+
+  .m-stage :global(.s-lost) {
+    fill: none;
+    stroke: var(--muted);
+    stroke-dasharray: 3 3;
+  }
+
+  .m-stage :global(.hatch) {
+    stroke: var(--muted);
+    stroke-width: 1;
+  }
+
+  .m-stage :global(.s-size) {
+    font-size: 17px;
+    font-weight: 500;
+    fill: var(--img-ink);
+  }
+
+  .m-stage :global(.s-size--s) {
+    font-size: 13px;
+  }
+
+  .m-stage :global(.s-cap) {
+    font-size: 11px;
+    font-weight: 400;
+    fill: var(--muted);
+  }
+
+  .m-stage :global(.s-m) {
+    font-size: 15px;
+    font-weight: 500;
+    fill: var(--fg);
+  }
+
+  .m-stage :global(.s-blade) {
+    fill: var(--fg);
+    opacity: 0.5;
+  }
+
+  .m-stage :global(.s-blade--fixed) {
+    opacity: 1;
+  }
+
+  .m-stage :global(.s-badge) {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+
+  .m-stage :global(.s-badge-t) {
+    font-size: 12px;
+    font-weight: 500;
+    fill: var(--fg);
+  }
+
+  .m-stage :global(.s-hit) {
+    fill: transparent;
+  }
+
+  .m-stage :global(.s-knob) {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+
+  .m-stage :global(.s-grip) {
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .m-stage :global(.s-handle) {
+    touch-action: none;
+    cursor: ew-resize;
+  }
+
+  .m-stage :global(.m-error) {
+    margin: 0;
+    padding: 40px 16px;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  /* Marge : − / champ / +. */
+  .marge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 4px 16px 16px;
+  }
+
+  .marge label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .marge small {
+    display: block;
+    font-size: 11px;
+  }
+
+  .step {
+    display: flex;
+    align-items: stretch;
+    height: 52px;
+    background: var(--bg);
+  }
+
+  .step button {
+    width: 52px;
+    border: 1px solid var(--fg);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .step button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .step__val {
+    display: flex;
+    align-items: baseline;
+    padding: 0 10px;
+    border-block: 1px solid var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .step input {
+    width: 64px;
+    height: 50px;
+    padding: 0 4px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .step input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  /* Liste « à régler ». */
+  .todo {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--fg);
+  }
+
+  .todo :global(li) {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    border-left: 1px solid var(--line);
+  }
+
+  .todo :global(li:first-child) {
+    border-left: 0;
+  }
+
+  .todo :global(.who) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .todo :global(.n) {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--fg);
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .todo :global(b) {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .todo :global(.how) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .todo :global(li.idle b) {
+    color: var(--muted);
+  }
+
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notes :global(.orient) {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .notes :global(.orient svg) {
+    flex: none;
+  }
+
+  .notes :global(.p-easel) {
+    fill: var(--paper);
+    stroke: var(--field-line);
+  }
+
+  .notes :global(.p-fixed) {
+    fill: var(--fg);
+  }
+
+  .notes :global(.p-col) {
+    fill: var(--muted);
+  }
+
+  .notes :global(.note) {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  /* Choix à deux ou trois boutons. */
+  .m-seg {
+    display: inline-flex;
+  }
+
+  .m-crop .m-seg {
+    margin-top: 8px;
+  }
+
+  .m-seg button {
+    height: 44px;
+    margin-left: -1px;
+    padding: 0 14px;
+    border: 1px solid var(--field-line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .m-seg button:first-child {
+    margin-left: 0;
+  }
+
+  .m-seg button[aria-pressed='true'] {
+    position: relative;
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--on-fg);
+  }
+
+  /* Type de margeur, replié. */
+  .m-easel {
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .m-easel summary {
+    min-height: 28px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .m-easel summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .m-easel b {
+    font-weight: 500;
+    color: var(--fg);
+  }
+
+  .m-link {
+    margin-left: 6px;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .m-easel__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 10px;
+  }
+
+  .fix2 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .m-turn {
+    margin: 0;
+    padding: 12px 16px;
+    background: var(--fg);
+    color: var(--on-fg);
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .m-turn :global(b) {
+    font-weight: 600;
+  }
+
+  .m-turn-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  .fix2 input {
+    width: 72px;
+    height: 44px;
+    margin: 0 6px;
+    padding: 0 10px;
+    border: 1px solid var(--field-line);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 16px;
+  }
+
+  /* Petit écran : papier, négatif, schéma et marge, cadrage, liste. */
+  @media (max-width: 900px) {
+    .margeur {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
+    }
+
+    .m-picks {
+      gap: 14px;
+    }
+
+    .margeur :global(.pick) {
+      min-height: 56px;
+      padding: 6px 2px;
+    }
+
+    .m-crop {
+      order: 1;
+    }
+
+    .m-todo {
+      order: 2;
+    }
+
+    .m-easel {
+      order: 3;
+    }
+
+    .todo {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .todo :global(li:nth-child(3)) {
+      border-left: 0;
+    }
+
+    .todo :global(li:nth-child(n + 3)) {
+      border-top: 1px solid var(--line);
+    }
+  }
+</style>
+
+<script>
+  import {
+    cm,
+    compute,
+    DEFAULTS,
+    draw,
+    EASELS,
+    easelSummary,
+    ENLARGERS,
+    negativesFor,
+    MIN,
+    mini,
+    NEGATIVES,
+    PAPERS,
+    picto,
+    ratioName,
+    steps,
+    STYLES,
+    type Result,
+    type Settings,
+  } from '../../lib/labo/margeur';
+  import { load, save } from '../../lib/labo/store';
+
+  const KEY = 'margeur';
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  // Réglages mémorisés, en ne gardant que les valeurs connues.
+  const state: Settings = { ...DEFAULTS };
+  const stored = load<Settings>(KEY);
+  if (stored) {
+    if (PAPERS.some((p) => p.id === stored.paper)) state.paper = stored.paper!;
+    if (NEGATIVES.some((n) => n.id === stored.negative)) state.negative = stored.negative!;
+    if (STYLES.some((st) => st.id === stored.style)) state.style = stored.style!;
+    if (EASELS.some((e) => e.id === stored.easel)) state.easel = stored.easel!;
+    if (typeof stored.margin === 'number' && stored.margin >= MIN && stored.margin <= 15) state.margin = stored.margin;
+    if (typeof stored.fix2 === 'number' && stored.fix2 >= MIN && stored.fix2 <= 15) state.fix2 = stored.fix2;
+    if (typeof stored.vertical === 'boolean') state.vertical = stored.vertical;
+    if (stored.turn === 'left' || stored.turn === 'right') state.turn = stored.turn;
+    if (ENLARGERS.some((e) => e.id === stored.enlarger)) state.enlarger = stored.enlarger!;
+    for (const k of ['fixMin', 'fixMax'] as const) {
+      const v = stored[k];
+      if (typeof v === 'number' && v >= MIN && v <= 15) state[k] = v;
+    }
+  }
+
+  const margin = $<HTMLInputElement>('m-margin');
+  const minus = $<HTMLButtonElement>('m-minus');
+  const plus = $<HTMLButtonElement>('m-plus');
+  const schema = $('m-schema');
+  const stage = $('m-stage');
+  const easel = $<HTMLDetailsElement>('m-easel');
+  const fix2 = easel.querySelector<HTMLInputElement>('#m-fix2 input')!;
+  const fix3 = [...easel.querySelectorAll<HTMLInputElement>('#m-fix3 input')];
+  const readNumber = (value: string) => parseFloat(value.replace(',', '.'));
+  let current: ReturnType<typeof draw> | undefined;
+
+  function pressed(container: HTMLElement, selector: string, active: (el: HTMLElement) => boolean) {
+    container.querySelectorAll<HTMLElement>(selector).forEach((el) => el.setAttribute('aria-pressed', String(active(el))));
+  }
+
+  function render() {
+    save(KEY, state);
+    const two = state.easel === '2';
+    const m = two ? state.fix2 : state.margin;
+    if (document.activeElement !== margin) margin.value = cm(m);
+    margin.disabled = two;
+    minus.disabled = two || m <= MIN;
+    plus.disabled = two || m >= 5;
+
+    pressed($('m-papers'), '.pick', (b) => b.dataset.id === state.paper);
+    pressed($('m-negs'), '.pick', (b) => b.dataset.id === state.negative);
+    pressed(easel, '[data-easel]', (b) => b.dataset.easel === state.easel);
+    pressed(easel, '[data-turn]', (b) => b.dataset.turn === state.turn);
+    pressed(easel, '[data-enlarger]', (b) => b.dataset.enlarger === state.enlarger);
+    // Négatifs que l'agrandisseur accepte ; si le négatif choisi n'en fait
+    // plus partie, on revient au 24 × 36.
+    const allowed = negativesFor(state.enlarger).map((n) => n.id);
+    if (!allowed.includes(state.negative)) state.negative = '24x36';
+    const negs = $('m-negs');
+    negs.querySelectorAll<HTMLElement>('.pick').forEach((b) => (b.hidden = !allowed.includes(b.dataset.id!)));
+    negs.style.setProperty('--count', String(allowed.length));
+    pressed(negs, '.pick', (b) => b.dataset.id === state.negative);
+    $('m-easel-sum').textContent = easelSummary(state);
+    $('m-fix2').hidden = !two;
+    $('m-fix3').hidden = state.easel !== '3';
+    if (document.activeElement !== fix2) fix2.value = cm(state.fix2);
+    for (const input of fix3) {
+      if (document.activeElement !== input) input.value = cm(state[input.dataset.bound as 'fixMin' | 'fixMax']);
+    }
+
+    // Les trois cadrages, chacun avec sa taille, pour comparer.
+    $('m-styles').innerHTML = STYLES.map((st) => {
+      const r = compute({ ...state, style: st.id });
+      const ok = !('error' in r);
+      const sub = !ok ? '' : st.id === 'gallery' ? 'bas plus large' : `${ratioName(r)} · ${r.lost >= 1 ? `−${r.lost} %` : 'entier'}`;
+      return `<button type="button" class="pick style" data-id="${st.id}" aria-pressed="${state.style === st.id}"><span class="mini">${mini(r, 76)}</span><strong>${st.label}</strong><span>${ok ? (r.rotated ? `${cm(r.img.h)} × ${cm(r.img.w)}` : `${cm(r.img.w)} × ${cm(r.img.h)}`) : '–'}</span><em>${sub}</em></button>`;
+    }).join('');
+    const vertical = $('m-vertical');
+    vertical.hidden = state.style !== 'gallery';
+    pressed(vertical, 'button', (b) => (b.dataset.v === '1') === state.vertical);
+
+    const res = compute(state);
+    const turn = $('m-turn');
+    turn.hidden = 'error' in res || !res.rotated;
+    if (!('error' in res) && res.rotated) {
+      turn.innerHTML = `Le ${res.negative.label} se projette en hauteur : <b>tourne le margeur d'un quart de tour</b>, côté fixe à ${res.turn === 'right' ? 'droite' : 'gauche'}.`;
+    }
+    if ('error' in res) {
+      current = undefined;
+      schema.innerHTML = `<p class="m-error">${res.error}</p>`;
+      $('m-todo').innerHTML = '';
+      $('m-notes').innerHTML = '';
+      return;
+    }
+    const cw = stage.clientWidth;
+    current = draw(res, cw, cw < 500 ? 330 : 520, { top: 1, left: 2, bottom: 3, right: 4 });
+    schema.innerHTML = current.svg;
+
+    $('m-todo').innerHTML = steps(res)
+      .map(
+        (step, i) =>
+          `<li class="${step.idle ? 'idle' : ''}"><span class="who"><span class="n">${i + 1}</span>${step.name}</span><b>${step.value}</b><span class="how">${step.how}</span></li>`,
+      )
+      .join('');
+    $('m-notes').innerHTML = notes(res).join('');
+  }
+
+  function notes(res: Result): string[] {
+    const out = [
+      `<div class="orient">${picto(res.rotated, res.turn)}<span>${
+        res.rotated
+          ? `Margeur tourné d'un quart de tour sous l'agrandisseur, côté fixe à ${res.turn === 'right' ? 'droite' : 'gauche'}. Le schéma le montre vu de devant ; les lames gardent leur nom.`
+          : "Margeur à l'endroit sous l'agrandisseur, côté fixe au fond."
+      }</span></div>`,
+    ];
+    if (res.lost >= 1) {
+      out.push(
+        `<p class="note">Hachures : la partie du négatif qui tombe sur les lames (${res.lost} % perdu sur la ${res.lostAlong === 'long' ? 'longueur' : 'largeur'}).</p>`,
+      );
+    }
+    for (const h of res.hints) out.push(`<p class="hint">${h}</p>`);
+    return out;
+  }
+
+  // Choix par vignettes.
+  $('m-papers').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.paper = b.dataset.id!), render();
+  });
+  $('m-negs').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.negative = b.dataset.id!), render();
+  });
+  $('m-styles').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('.pick');
+    if (b) (state.style = b.dataset.id as Settings['style']), render();
+  });
+  $('m-vertical').addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('button');
+    if (b) (state.vertical = b.dataset.v === '1'), render();
+  });
+  easel.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('[data-easel]');
+    if (b) (state.easel = b.dataset.easel as Settings['easel']), render();
+    const g = (e.target as Element).closest<HTMLElement>('[data-enlarger]');
+    if (g) (state.enlarger = g.dataset.enlarger as Settings['enlarger']), render();
+    const t = (e.target as Element).closest<HTMLElement>('[data-turn]');
+    if (t) (state.turn = t.dataset.turn as Settings['turn']), render();
+  });
+  fix2.addEventListener('input', () => {
+    const v = readNumber(fix2.value);
+    if (v >= MIN && v <= 15) (state.fix2 = Math.round(v * 10) / 10), render();
+  });
+  fix2.addEventListener('blur', render);
+  for (const input of fix3) {
+    input.addEventListener('input', () => {
+      const v = readNumber(input.value);
+      if (v >= MIN && v <= 15) (state[input.dataset.bound as 'fixMin' | 'fixMax'] = Math.round(v * 10) / 10), render();
+    });
+    input.addEventListener('blur', render);
+  }
+
+  // Marge : saisie libre (virgule acceptée), ou − / + au demi-centimètre.
+  margin.addEventListener('input', () => {
+    const v = readNumber(margin.value);
+    if (v >= MIN && v <= 15) (state.margin = Math.round(v * 10) / 10), render();
+  });
+  margin.addEventListener('blur', render);
+  margin.addEventListener('focus', () => margin.select());
+  const bump = (d: number) => {
+    const v = state.margin + d;
+    const snapped = d > 0 ? Math.floor(v * 2 + 1e-6) / 2 : Math.ceil(v * 2 - 1e-6) / 2;
+    state.margin = Math.min(5, Math.max(MIN, snapped));
+    render();
+  };
+  minus.addEventListener('click', () => bump(-0.5));
+  plus.addEventListener('click', () => bump(0.5));
+
+  // Glisser la lame gauche ou droite : l'autre suit en miroir.
+  let drag: 'left' | 'right' | null = null;
+  schema.addEventListener('pointerdown', (e) => {
+    const h = (e.target as Element).closest<SVGGElement>('.s-handle');
+    if (!h) return;
+    drag = h.dataset.side as 'left' | 'right';
+    margin.blur();
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag || !current) return;
+    const box = schema.querySelector('svg')!.getBoundingClientRect();
+    const t = Math.min(5, Math.max(MIN, Math.round(current.toMargin(drag, e.clientX - box.left, e.clientY - box.top) * 10) / 10));
+    if (t !== state.margin) (state.margin = t), render();
+  });
+  window.addEventListener('pointerup', () => (drag = null));
+
+  new ResizeObserver(() => render()).observe(stage);
+  render();
+</script>
