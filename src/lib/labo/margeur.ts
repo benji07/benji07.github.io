@@ -21,16 +21,34 @@ export const PAPERS = [
   { id: '30x40', label: '30×40', long: 40.6, short: 30.5 },
 ];
 
-/** Négatifs, du plus petit au plus grand : grand et petit côté de la vue (mm) ; `portrait` : projeté en hauteur. */
+/**
+ * Négatifs, du plus petit au plus grand : grand et petit côté de la vue (mm) ;
+ * `portrait` : projeté en hauteur ; `carrier` : plus petit agrandisseur qui
+ * le prend en entier (le XPan, 65 mm de long, demande un passe-vue 6 × 9).
+ */
 export const NEGATIVES = [
-  { id: '18x24', label: '18×24', long: 24, short: 18, portrait: true },
-  { id: '24x36', label: '24×36', long: 36, short: 24, portrait: false },
-  { id: '24x65', label: 'XPan', long: 65, short: 24, portrait: false },
-  { id: '45x6', label: '6×4,5', long: 56, short: 42, portrait: true },
-  { id: '6x6', label: '6×6', long: 56, short: 56, portrait: false },
-  { id: '6x7', label: '6×7', long: 69, short: 56, portrait: false },
-  { id: '6x9', label: '6×9', long: 84, short: 56, portrait: false },
+  { id: '18x24', label: '18×24', long: 24, short: 18, portrait: true, carrier: '6x6' },
+  { id: '24x36', label: '24×36', long: 36, short: 24, portrait: false, carrier: '6x6' },
+  { id: '24x65', label: 'XPan', long: 65, short: 24, portrait: false, carrier: '6x9' },
+  { id: '45x6', label: '6×4,5', long: 56, short: 42, portrait: true, carrier: '6x6' },
+  { id: '6x6', label: '6×6', long: 56, short: 56, portrait: false, carrier: '6x6' },
+  { id: '6x7', label: '6×7', long: 69, short: 56, portrait: false, carrier: '6x7' },
+  { id: '6x9', label: '6×9', long: 84, short: 56, portrait: false, carrier: '6x9' },
 ];
+
+/** Format maximal de l'agrandisseur : les négatifs plus grands sont masqués. */
+export const ENLARGERS = [
+  { id: '6x6', label: '6×6' },
+  { id: '6x7', label: '6×7' },
+  { id: '6x9', label: '6×9' },
+] as const;
+export type Enlarger = (typeof ENLARGERS)[number]['id'];
+const RANK: Record<Enlarger, number> = { '6x6': 0, '6x7': 1, '6x9': 2 };
+
+/** Négatifs que l'agrandisseur accepte. */
+export function negativesFor(enlarger: Enlarger) {
+  return NEGATIVES.filter((n) => RANK[n.carrier as Enlarger] <= RANK[enlarger]);
+}
 
 export const STYLES: { id: Style; label: string }[] = [
   { id: 'full', label: 'Sans recadrer' },
@@ -46,12 +64,13 @@ export const EASELS: { id: EaselType; label: string }[] = [
 
 /** Description du margeur choisi, pour le repli « Mon margeur ». */
 export function easelSummary(s: Settings): string {
-  if (s.easel === '2') return `2 lames · haut et gauche fixes à ${cm(s.fix2)} cm`;
+  const enlarger = `agrandisseur jusqu'au ${ENLARGERS.find((e) => e.id === s.enlarger)?.label ?? '6×9'}`;
+  if (s.easel === '2') return `2 lames, haut et gauche fixes à ${cm(s.fix2)} cm · ${enlarger}`;
   if (s.easel === '3') {
     const [min, max] = fixedRange(s);
-    return `3 lames · côté fixe réglable de ${cm(min)} à ${cm(max)} cm`;
+    return `3 lames, côté fixe de ${cm(min)} à ${cm(max)} cm · ${enlarger}`;
   }
-  return '4 lames · tout est réglable';
+  return `4 lames · ${enlarger}`;
 }
 
 /** Plus petite marge possible ; facteur galerie. */
@@ -74,6 +93,8 @@ export interface Settings {
   fixMax: number;
   /** Margeur tourné : côté fixe à droite ou à gauche (sens du quart de tour). */
   turn: 'right' | 'left';
+  /** Plus grand format que prend l'agrandisseur. */
+  enlarger: Enlarger;
 }
 
 /** Plage du côté fixe d'un 3 lames, bornes remises dans l'ordre. */
@@ -94,6 +115,7 @@ export const DEFAULTS: Settings = {
   fixMin: 0.5,
   fixMax: 5,
   turn: 'right',
+  enlarger: '6x9',
 };
 
 const r1 = (x: number) => Math.round(x * 10) / 10;

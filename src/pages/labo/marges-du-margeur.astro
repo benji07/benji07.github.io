@@ -1,6 +1,6 @@
 ---
 import LaboTool from '../../components/LaboTool.astro';
-import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '../../lib/labo/margeur';
+import { DEFAULTS, EASELS, ENLARGERS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '../../lib/labo/margeur';
 
 // Les vignettes de papier et de négatif sont rendues ici ; le schéma, les
 // cadrages et la liste dépendent de la largeur et des réglages mémorisés :
@@ -69,10 +69,19 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     </div>
 
     <details class="m-easel" id="m-easel">
-      <summary>Mon margeur : <b id="m-easel-sum"></b> <span class="m-link">changer</span></summary>
+      <summary>Mon matériel : <b id="m-easel-sum"></b> <span class="m-link">changer</span></summary>
       <div class="m-easel__body">
-        <div class="m-seg">
-          {EASELS.map((e) => <button type="button" data-easel={e.id}>{e.id} lames</button>)}
+        <div class="m-turn-pick">
+          <span class="fix2">Agrandisseur jusqu'au</span>
+          <div class="m-seg">
+            {ENLARGERS.map((e) => <button type="button" data-enlarger={e.id}>{e.label}</button>)}
+          </div>
+        </div>
+        <div class="m-turn-pick">
+          <span class="fix2">Margeur</span>
+          <div class="m-seg">
+            {EASELS.map((e) => <button type="button" data-easel={e.id}>{e.id} lames</button>)}
+          </div>
         </div>
         <label class="fix2" id="m-fix2">
           Marges fixes <input type="text" inputmode="decimal" autocomplete="off" value="1,0" /> cm
@@ -162,7 +171,11 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
   }
 
   .picks--neg {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(var(--count, 7), 1fr);
+  }
+
+  .margeur :global(.pick[hidden]) {
+    display: none;
   }
 
   .margeur :global(.pick) {
@@ -684,6 +697,8 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     draw,
     EASELS,
     easelSummary,
+    ENLARGERS,
+    negativesFor,
     MIN,
     mini,
     NEGATIVES,
@@ -712,6 +727,7 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     if (typeof stored.fix2 === 'number' && stored.fix2 >= MIN && stored.fix2 <= 15) state.fix2 = stored.fix2;
     if (typeof stored.vertical === 'boolean') state.vertical = stored.vertical;
     if (stored.turn === 'left' || stored.turn === 'right') state.turn = stored.turn;
+    if (ENLARGERS.some((e) => e.id === stored.enlarger)) state.enlarger = stored.enlarger!;
     for (const k of ['fixMin', 'fixMax'] as const) {
       const v = stored[k];
       if (typeof v === 'number' && v >= MIN && v <= 15) state[k] = v;
@@ -746,6 +762,15 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
     pressed($('m-negs'), '.pick', (b) => b.dataset.id === state.negative);
     pressed(easel, '[data-easel]', (b) => b.dataset.easel === state.easel);
     pressed(easel, '[data-turn]', (b) => b.dataset.turn === state.turn);
+    pressed(easel, '[data-enlarger]', (b) => b.dataset.enlarger === state.enlarger);
+    // Négatifs que l'agrandisseur accepte ; si le négatif choisi n'en fait
+    // plus partie, on revient au 24 × 36.
+    const allowed = negativesFor(state.enlarger).map((n) => n.id);
+    if (!allowed.includes(state.negative)) state.negative = '24x36';
+    const negs = $('m-negs');
+    negs.querySelectorAll<HTMLElement>('.pick').forEach((b) => (b.hidden = !allowed.includes(b.dataset.id!)));
+    negs.style.setProperty('--count', String(allowed.length));
+    pressed(negs, '.pick', (b) => b.dataset.id === state.negative);
     $('m-easel-sum').textContent = easelSummary(state);
     $('m-fix2').hidden = !two;
     $('m-fix3').hidden = state.easel !== '3';
@@ -828,6 +853,8 @@ import { DEFAULTS, EASELS, NEGATIVES, negativeThumb, PAPERS, paperThumb } from '
   easel.addEventListener('click', (e) => {
     const b = (e.target as Element).closest<HTMLElement>('[data-easel]');
     if (b) (state.easel = b.dataset.easel as Settings['easel']), render();
+    const g = (e.target as Element).closest<HTMLElement>('[data-enlarger]');
+    if (g) (state.enlarger = g.dataset.enlarger as Settings['enlarger']), render();
     const t = (e.target as Element).closest<HTMLElement>('[data-turn]');
     if (t) (state.turn = t.dataset.turn as Settings['turn']), render();
   });
